@@ -1,0 +1,13 @@
+datetime
+tqdm
+pathlib
+requests
+zipfile36
+pandas
+pyarrow
+scikit-learn
+numpy
+seaborn
+shapely
+folium
+matplotlib
