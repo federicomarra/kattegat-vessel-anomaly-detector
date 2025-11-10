@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 from shapely.geometry import Point, Polygon
 
-def df_filter( df: pd.DataFrame, verbose_mode: bool = False) -> pd.DataFrame:
+def df_filter( df: pd.DataFrame, verbose_mode: bool = False, polygon_filter: bool = True) -> pd.DataFrame:
     """
     Filter AIS dataframe based on bounding box and polygon area.
     Parameters:
@@ -13,6 +13,8 @@ def df_filter( df: pd.DataFrame, verbose_mode: bool = False) -> pd.DataFrame:
     - Filtered AIS dataframe
     """
 
+    df["MMSI"] = df["MMSI"].astype(str)  # Convert to regular string    
+        
     # Initial checks (se no ce so queste semo fottuti)
     required_columns = ["Latitude", "Longitude", "# Timestamp", "MMSI", "SOG"]
     for col in required_columns:
@@ -44,8 +46,8 @@ def df_filter( df: pd.DataFrame, verbose_mode: bool = False) -> pd.DataFrame:
     df = df.rename(columns={"# Timestamp": "Timestamp"}) # Rename column for consistency
     df["Timestamp"] = pd.to_datetime(df["Timestamp"], format="%d/%m/%Y %H:%M:%S", errors="coerce") # Convert to datetime
 
-    #df = df[df["MMSI"].str.len() == 9]  # Adhere to MMSI format
-    #df = df[df["MMSI"].str[:3].astype(int).between(200, 775)]  # Adhere to MID standard
+    df = df[df["MMSI"].str.len() == 9]  # Adhere to MMSI format
+    df = df[df["MMSI"].str[:3].astype(int).between(200, 775)]  # Adhere to MID standard
 
     df = df.drop_duplicates(["Timestamp", "MMSI", ], keep="first") # Remove duplicates
 
@@ -62,11 +64,12 @@ def df_filter( df: pd.DataFrame, verbose_mode: bool = False) -> pd.DataFrame:
 
 
     # ---- POLYGON FILTERING ----
-    point = df[["Latitude", "Longitude"]].apply(lambda x: Point(x["Latitude"], x["Longitude"]), axis=1)
-    polygon = Polygon(polygon_coords)
-    df = df[point.apply(lambda x: polygon.contains(x))]
-    if verbose_mode:
-        print(f" Polygon filtering complete: {len(df):,} rows, {df['MMSI'].nunique():,} unique vessels")
+    if polygon_filter:
+        point = df[["Latitude", "Longitude"]].apply(lambda x: Point(x["Latitude"], x["Longitude"]), axis=1)
+        polygon = Polygon(polygon_coords)
+        df = df[point.apply(lambda x: polygon.contains(x))]
+        if verbose_mode:
+            print(f" Polygon filtering complete: {len(df):,} rows, {df['MMSI'].nunique():,} unique vessels")
 
 
     knots_to_ms = 0.514444
