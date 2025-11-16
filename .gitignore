@@ -218,3 +218,5 @@ df_static.parquet
 path_*.html
 map_*.html
 *.folium.html
+
+make_parquet.py
