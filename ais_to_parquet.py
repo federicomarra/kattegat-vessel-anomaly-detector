@@ -19,9 +19,8 @@ def fn(file_path, out_path):
     usecols = list(dtypes.keys())
     df = pandas.read_csv(file_path, usecols=usecols, dtype=dtypes)
 
-    # Remove errors
-    bbox = [60, 0, 50, 20]
-    north, west, south, east = bbox
+    # Remove errors and filter data
+    north, west, south, east = 60, 0, 50, 20
     df = df[(df["Latitude"] <= north) & (df["Latitude"] >= south) & (df["Longitude"] >= west) & (
             df["Longitude"] <= east)]
 
@@ -78,4 +77,4 @@ def fn(file_path, out_path):
 
 if __name__ == "__main__":
     d = "2025-01-02"
-    fn("ais-data/aisdk-{d}.csv", "ais-data-parquet/{d}")
+    fn(f"ais-data/aisdk-{d}.csv", f"ais-data-parquet/{d}")
