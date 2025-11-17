@@ -207,7 +207,6 @@ marimo/_lsp/
 __marimo__/
 
 # AIS Data
-ais-data
-ais-data-parquet
+ais-data/csv
+ais-data/parquet
 .DS_Store
-/ais-data-parquet

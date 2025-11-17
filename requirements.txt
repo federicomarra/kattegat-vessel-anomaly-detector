@@ -11,3 +11,7 @@ seaborn
 shapely
 folium
 matplotlib
+fastparquet
+PyYAML
+typing
+duckdb
