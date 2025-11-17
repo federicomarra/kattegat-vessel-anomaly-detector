@@ -1,4 +1,4 @@
-#  Loss ELBO per VAE-LSTM (reconstruction + KL divergence)
+# Loss ELBO per VAE-LSTM (reconstruction + KL divergence)
 # Reconstruction = MSE weighted by mask on valid time steps
 
 import torch

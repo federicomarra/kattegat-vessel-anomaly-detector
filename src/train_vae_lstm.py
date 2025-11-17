@@ -2,6 +2,7 @@ from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import pad_sequence
 from dataset_segments_raw import AISSegmentRaw
 from vae_lstm import VAE_LSTM
+from vae_lstm2 import VAE_LSTM2
 from losses import elbo_mse
 import torch, yaml
 
@@ -26,6 +27,8 @@ def main():
 
     # Model
     model = VAE_LSTM(in_dim=5, hidden_size=128, z_dim=32).to(device)
+    # model = VAE_LSTM2(input_size=5, hidden_size=128, latent_size=32).to(device)
+    print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     num_epochs = 30
@@ -36,10 +39,16 @@ def main():
         model.train()
         beta = beta0 + (betaT - beta0) * min(epoch / warmup_epochs, 1.0)
         train_loss = train_rec = train_kl = 0.0
-        for x, mask in dl_train:
+        for batch_idx, (x, mask) in enumerate(dl_train):
             x, mask = x.to(device), mask.to(device)
+            if epoch == 1 and batch_idx == 0:
+                valid = x[~torch.isnan(x)]
+                print("DEBUG x stats:",
+                    "min", valid.min().item() if valid.numel() > 0 else None,
+                    "max", valid.max().item() if valid.numel() > 0 else None,
+                    "has_nan", torch.isnan(x).any().item())
             optimizer.zero_grad()
-            x_hat, mu, logvar, _ = model(x, mask)
+            x_hat, mu, logvar = model(x, mask)
             loss, parts = elbo_mse(x_hat, x, mask, mu, logvar, beta)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -54,7 +63,7 @@ def main():
         with torch.no_grad():
             for x, mask in dl_val:
                 x, mask = x.to(device), mask.to(device)
-                x_hat, mu, logvar, _ = model(x, mask)
+                x_hat, mu, logvar = model(x, mask)
                 loss, parts = elbo_mse(x_hat, x, mask, mu, logvar, beta=1.0)
                 val_loss += loss.item() 
                 val_rec += parts['reconstruction'].item() 
