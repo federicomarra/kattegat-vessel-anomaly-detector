@@ -9,9 +9,9 @@ import pyarrow.parquet
 
 def segment_ais_tracks(
     df: pd.DataFrame,
-    min_track_len: int = 256,
+    min_track_len: int = 30,
     min_track_duration_sec: int = 60 * 60,
-    max_time_gap_sec: int = 15 * 60,
+    max_time_gap_sec: int = 30,
     sog_min: Optional[float] = 0.5,
     sog_max: Optional[float] = 25.0,
     verbose: bool = False,

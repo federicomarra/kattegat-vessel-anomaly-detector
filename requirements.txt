@@ -15,3 +15,4 @@ fastparquet
 PyYAML
 typing
 duckdb
+torchvision
