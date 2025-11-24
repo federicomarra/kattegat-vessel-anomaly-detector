@@ -38,8 +38,8 @@ CABLE_POINTS = {
 }
 
 # ---- PRE-PROCESSING CONFIGURATION ----
-PRE_PROCESSING_FOLDER = "pre_processing"
-PRE_PROCESSING_DF_PATH = f"{PRE_PROCESSING_FOLDER}/pre_processed_df.parquet"
+PRE_PROCESSING_DF_PATH = f"{FOLDER_NAME}/pre_processed_df.parquet"
+PRE_PROCESSING_METADATA_PATH = f"{FOLDER_NAME}/pre_processing_metadata.json"
 NUMERIC_COLS = [
     "Latitude", 
     "Longitude",
