@@ -1,7 +1,18 @@
 import pandas as pd
 import numpy as np
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, LineString
 from typing import Optional
+import math
+
+cable_CG2_points = [(57.30158, 10.53598), (57.30987, 10.56213), (57.32877, 10.62335), (57.44588,10.95990), (57.48487, 11.27270), (57.51543, 11.50590) ,(57.47733, 11.74353), (57.46635, 11.82507), (57.45608, 11.91480)]
+cable_kattegat2A_points = [(57.23810, 10.54834), (57.25287, 10.56423), (57.26348,10.65152), (57.25885, 10.73908),(57.26067, 10.75360), (57.25628, 10.79103), (57.25233, 10.86909)]
+cable_kattegat2B_points = [(57.30917, 11.19625), (57.39863, 11.48437), (57.44917,11.64585), (57.46658, 11.76620), (57.46273, 11.77677), (57.46470, 11.82323), (57.46743, 11.85143), (57.46640, 11.89138), (57.45608, 11.91480)]
+
+cable_points = {
+    "CG2": cable_CG2_points,
+    "Kattegat2A": cable_kattegat2A_points,
+    "Kattegat2B": cable_kattegat2B_points,
+}
 
 def merge_on_mmsi(static_df, dynamic_df):
     """
@@ -507,3 +518,143 @@ def ais_df_summary_split(static_df, dynamic_df, show_plots=False):
     print("="*80)
     
     return summary
+
+def build_polyline(points_latlon):
+    """
+    points_latlon: lista di (lat, lon) IN GRADI, nell'ordine in cui
+                   vuoi che vengano collegati.
+    Ritorna: shapely.geometry.LineString
+    """
+    if len(points_latlon) < 2:
+        raise ValueError("Servono almeno 2 punti per costruire una spezzata.")
+    
+    # Shapely vuole (x, y) = (lon, lat)
+    coords = [(lon, lat) for (lat, lon) in points_latlon]
+    return LineString(coords)
+
+def haversine_distance(lat1, lon1, lat2, lon2):
+    """Calculates the distance in meters between two lat/lon points."""
+    R = 6371000  # Earth radius in meters
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    
+    a = math.sin(dphi/2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+def get_closest_point_on_segment(p_lat, p_lon, a_lat, a_lon, b_lat, b_lon):
+    """
+    Finds the closest point on segment AB to point P.
+    Uses vector projection on lat/lon (sufficiently accurate for local scale).
+    """
+    # Vector form relative to A
+    x = p_lon - a_lon
+    y = p_lat - a_lat
+    dx = b_lon - a_lon
+    dy = b_lat - a_lat
+    
+    if dx == 0 and dy == 0:
+        return a_lat, a_lon
+
+    # Calculate the projection scalar 't'
+    # t represents how far along the line segment the closest point is (0 to 1)
+    t = (x * dx + y * dy) / (dx*dx + dy*dy)
+    
+    # Clamp t to the segment range [0, 1]
+    # If t < 0, closest is point A; if t > 1, closest is point B
+    t = max(0, min(1, t))
+    
+    # The coordinates of the closest point on the line
+    closest_lat = a_lat + t * dy
+    closest_lon = a_lon + t * dx
+    
+    return closest_lat, closest_lon
+
+def get_min_distance_to_cables(vessel_lat, vessel_lon, cables_dict):
+    """
+    Returns:
+    1. Minimum distance in meters.
+    2. Name of the nearest cable.
+    3. Coordinates (lat, lon) of the specific point on that cable.
+    """
+    min_dist = float('inf')
+    nearest_cable = None
+    nearest_point = (None, None)
+
+    for cable_name, points in cables_dict.items():
+        # Iterate through every segment (from point i to point i+1)
+        for i in range(len(points) - 1):
+            p1_lat, p1_lon = points[i]
+            p2_lat, p2_lon = points[i+1]
+            
+            # Find the closest point on THIS segment
+            c_lat, c_lon = get_closest_point_on_segment(vessel_lat, vessel_lon, p1_lat, p1_lon, p2_lat, p2_lon)
+            
+            # Calculate real physical distance to that projected point
+            dist = haversine_distance(vessel_lat, vessel_lon, c_lat, c_lon)
+            
+            if dist < min_dist:
+                min_dist = dist
+                nearest_cable = cable_name
+                nearest_point = (c_lat, c_lon)
+
+    return min_dist, nearest_cable, nearest_point
+
+def analyze_cable_risks(df, cables_dict, lat_col='Lat', lon_col='Lon'):
+    """
+    Calculates the distance of every vessel position to the nearest cable.
+    
+    Args:
+        df: Input DataFrame
+        cables_dict: The dictionary of cable points
+        lat_col: Name of the column containing Latitude
+        lon_col: Name of the column containing Longitude
+        
+    Returns:
+        A new DataFrame with MMSI, Date, Distance, and the exact point on the cable.
+    """
+    
+    # 1. Pre-allocate lists for speed
+    distances = []
+    cable_names = []
+    cable_lats = []
+    cable_lons = []
+    mmsis = []
+    dates = []
+    
+    # 2. Extract numpy arrays for fast iteration
+    #    (Using .values is much faster than .iterrows)
+    lats = df[lat_col].values
+    lons = df[lon_col].values
+    mmsi_list = df['MMSI'].values
+    date_list = df['Date'].values
+    
+    print(f"Processing {len(df)} rows for cable proximity...")
+    
+    # 3. Iterate with a progress bar
+    for lat, lon, mmsi, date in tqdm(zip(lats, lons, mmsi_list, date_list), total=len(df)):
+        
+        # Call your existing function
+        dist, name, (c_lat, c_lon) = get_min_distance_to_cables(lat, lon, cables_dict)
+        
+        # Store results
+        distances.append(dist)
+        cable_names.append(name)
+        cable_lats.append(c_lat)
+        cable_lons.append(c_lon)
+        mmsis.append(mmsi)
+        dates.append(date)
+
+    # 4. Build the Result DataFrame
+    risk_df = pd.DataFrame({
+        'MMSI': mmsis,
+        'Date': dates,
+        'distance_to_cable_m': distances,
+        'nearest_cable': cable_names,
+        'cable_point_lat': cable_lats,  # The specific "endangered" point on the cable
+        'cable_point_lon': cable_lons
+    })
+    
+    return risk_df
+
