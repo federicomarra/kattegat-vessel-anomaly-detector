@@ -1,10 +1,14 @@
 # ---- DATA CONFIGURATION ----
-START_DATE = "2025-11-01"
-END_DATE   = "2025-11-07"
+START_DATE = "2025-10-20"
+END_DATE   = "2025-11-10"
+
+TRAIN_END_DATE = "2025-11-08"
+TEST_DATE = "2025-11-09"
 
 FOLDER_NAME = "ais-data"
 DELETE_DOWNLOADED_CSV = False
 VERBOSE_MODE = True
+TEST_OUTPUT_CSV = "runs/test_2025-11-09_scores.csv"
 
 VESSEL_AIS_CLASS = ("Class A", "Class B")
 
@@ -40,6 +44,9 @@ CABLE_POINTS = {
 # ---- PRE-PROCESSING CONFIGURATION ----
 PRE_PROCESSING_DF_PATH = f"{FOLDER_NAME}/pre_processed_df.parquet"
 PRE_PROCESSING_METADATA_PATH = f"{FOLDER_NAME}/pre_processing_metadata.json"
+RAW_PARQUET_ROOT = f"{FOLDER_NAME}/parquet"
+SHIPTYPE_EMB_DIM = 8
+TEST_BATCH_SIZE = 128
 NUMERIC_COLS = [
     "Latitude", 
     "Longitude",
@@ -51,8 +58,8 @@ NUMERIC_COLS = [
 # ---- TRAINING CONFIGURATION ----
 SEGMENT_MAX_LENGTH = 30  # datapoints
 
-BATCH_SIZE = 64
-EPOCHS = 10
+BATCH_SIZE = 128
+EPOCHS = 30
 
 HIDDEN_DIM = 64
 LATENT_DIM = 16
@@ -60,7 +67,7 @@ NUM_LAYERS = 1
 LEARNING_RATE = 1e-3
 BETA = 1e-3
 
-MODEL_SAVE_PATH = "models/dark_vessel_model.pth"
+MODEL_PATH = "models/dark_vessel_model.pth"
 NUM_WORKERS = 4
 AUGMENTATION_PARAMS = {
     "rotation_range": 10,

@@ -24,6 +24,7 @@ parquet_folder_path = folder_path / "parquet"
 SEGMENT_MAX_LENGTH = config.SEGMENT_MAX_LENGTH
 NUMERIC_COLS = config.NUMERIC_COLS
 PRE_PROCESSING_DF_PATH = config.PRE_PROCESSING_DF_PATH
+MODEL_PATH = config.MODEL_PATH
 
 class AISTrajectoryDataset(Dataset):
     def __init__(self, df_seq: pd.DataFrame):
@@ -225,7 +226,7 @@ def main_training():
             "Sequence": X,
         })
     df_seq = pd.DataFrame(sequences)
-    
+
     
     dataset = AISTrajectoryDataset(df_seq)
     dataloader = DataLoader(dataset, batch_size=config.BATCH_SIZE, shuffle=True)
@@ -291,7 +292,13 @@ def main_training():
             f"- rec: {total_rec/N:.6f} "
             f"- kl: {total_kl/N:.6f}"
         )
+    # Save the trained model
     
+    # torch.save(model.state_dict(), Path("runs")/"best_vae_lstm.pt")
+    Path(MODEL_PATH).parent.mkdir(parents=True, exist_ok=True)
+    torch.save(model.state_dict(), MODEL_PATH)
+    print(f"\nModel saved to: {MODEL_PATH}")
+
     # Performance check
     # Real vs reconstructed
     features_names = [

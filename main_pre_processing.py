@@ -19,11 +19,24 @@ parquet_folder_path = folder_path / "parquet"
 SEGMENT_MAX_LENGTH = config.SEGMENT_MAX_LENGTH
 
 NUMERIC_COLS = config.NUMERIC_COLS
+# if u want to do it withouth a end date comment next line
+TRAIN_END_DATE = config.TRAIN_END_DATE
 
 def main_pre_processing():
+    # and comment also NEXT line 
+    print(f"Querying AIS data for training period: up to {TRAIN_END_DATE}")
+
+
     # Loading filtered data from parquet files
     df = ais_query.query_ais_duckdb(parquet_folder_path, verbose=VERBOSE_MODE)
 
+    # and also THIS paragraph
+    # Filter the data by date *before* dropping columns and splitting
+    df['Date'] = pd.to_datetime(df['Date'])
+    df = df[df['Date'] <= TRAIN_END_DATE].copy()
+    print(f"Data loaded and filtered for training: {len(df)} records.") 
+    
+    
     # Dropping unnecessary columns and rows with missing values
     df.drop(columns=[ 
         'Type of mobile', 
