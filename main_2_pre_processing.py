@@ -20,24 +20,40 @@ SEGMENT_MAX_LENGTH = config.SEGMENT_MAX_LENGTH
 
 NUMERIC_COLS = config.NUMERIC_COLS
 # if u want to do it withouth a end date comment next line
+TRAIN_START_DATE = config.TRAIN_START_DATE
 TRAIN_END_DATE = config.TRAIN_END_DATE
 
-def main_pre_processing():
-    # and comment also NEXT line 
-    print(f"Querying AIS data for training period: up to {TRAIN_END_DATE}")
+TEST_START_DATE = config.TEST_START_DATE
+TEST_END_DATE = config.TEST_END_DATE
 
+def main_pre_processing(dataframe_type: str = "train"):
 
-    # Loading filtered data from parquet files
-    df = ais_query.query_ais_duckdb(parquet_folder_path, verbose=VERBOSE_MODE)
-
-    # and also THIS paragraph
-    # Filter the data by date *before* dropping columns and splitting
-    df['Date'] = pd.to_datetime(df['Date'])
-    df = df[df['Date'] <= TRAIN_END_DATE].copy()
-    print(f"Data loaded and filtered for training: {len(df)} records.") 
+    if dataframe_type == "train":
+        print(f"[pre_processing] Querying AIS data for training period: {TRAIN_START_DATE} to {TRAIN_END_DATE}")
+        # Loading filtered data from parquet files
+        dates = (
+            pd.date_range(TRAIN_START_DATE, TRAIN_END_DATE, freq="D")
+            .strftime("%Y-%m-%d")
+            .tolist()
+        )
+        df = ais_query.query_ais_duckdb(parquet_folder_path, dates=dates, verbose=VERBOSE_MODE)
+        
+    elif dataframe_type == "test":
+        print(f"[pre_processing] Querying AIS data for testing period: {TEST_START_DATE} to {TEST_END_DATE}")
+        # Loading filtered data from parquet files
+        dates = (
+            pd.date_range(TEST_START_DATE, TEST_END_DATE, freq="D")
+            .strftime("%Y-%m-%d")
+            .tolist()
+        )
+        df = ais_query.query_ais_duckdb(parquet_folder_path, dates=dates, verbose=VERBOSE_MODE)
+    else:
+        raise ValueError(f"Invalid dataframe_type: {dataframe_type}. Must be 'train' or 'test'.")
     
-    
+
     # Dropping unnecessary columns and rows with missing values
+    print(f"[pre_processing] Initial data size: {len(df)} records.")
+    print(f"[pre_processing] Dropping unnecessary columns and rows with missing values...")
     df.drop(columns=[ 
         'Type of mobile', 
         'ROT', 
@@ -57,12 +73,14 @@ def main_pre_processing():
         'Date'], inplace=True, errors='ignore')
 
     df.dropna(inplace=True)
+    print(f"[pre_processing] Data size after dropping: {len(df)} records.")
 
 
     # Adding △T feature
     df = pre_processing_utils.add_delta_t(df)
 
     # Splitting segments
+    print(f"[pre_processing] Splitting segments to max length {SEGMENT_MAX_LENGTH}...")
     df = pre_processing_utils.split_segments_fixed_length(df, max_len=SEGMENT_MAX_LENGTH)
 
     # Normalizing numeric columns
@@ -76,10 +94,20 @@ def main_pre_processing():
     df, ship_type_to_id = pre_processing_utils.label_ship_types(df)
     
     # Saving pre-processed DataFrame
-    output_path = config.PRE_PROCESSING_DF_PATH
+    if dataframe_type == "train":
+        print(f"[pre_processing] Saving pre-processed DataFrame to {config.PRE_PROCESSING_DF_TRAIN_PATH}...")
+        output_path = config.PRE_PROCESSING_DF_TRAIN_PATH
+        metadata_path = config.PRE_PROCESSING_METADATA_TRAIN_PATH
+    else:
+        print(f"[pre_processing] Saving pre-processed DataFrame to {config.PRE_PROCESSING_DF_TEST_PATH}...")
+        output_path = config.PRE_PROCESSING_DF_TEST_PATH
+        metadata_path = config.PRE_PROCESSING_METADATA_TEST_PATH
+
+    print(f"[pre_processing] Columns of pre-processed DataFrame:\n{df.columns.tolist()}")
     df.to_parquet(output_path, index=False)
 
     # Saving preprocessing metadata
+    print(f"[pre_processing] Saving preprocessing metadata to {metadata_path}...")
     meta = {
         "mean": mean.tolist(),
         "std": std.tolist(),
@@ -87,7 +115,7 @@ def main_pre_processing():
         "ship_type_to_id": ship_type_to_id
     }
 
-    with open(config.PRE_PROCESSING_METADATA_PATH, "w") as f:
+    with open(metadata_path, "w") as f:
         json.dump(meta, f, indent=4)
         
 if __name__ == "__main__":

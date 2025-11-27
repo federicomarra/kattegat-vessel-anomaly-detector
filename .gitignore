@@ -210,6 +210,7 @@ __marimo__/
 # AIS Data
 ais-data/csv
 ais-data/parquet
+ais-data/df_preprocessed/
 .DS_Store
 
 df_dynamic.parquet
@@ -223,5 +224,4 @@ path_html/
 
 make_parquet.py
 *.parquet
-ais-data/pre_processing_metadata.json
 /runs

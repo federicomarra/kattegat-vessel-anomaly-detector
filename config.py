@@ -2,17 +2,20 @@
 START_DATE = "2025-10-20"
 END_DATE   = "2025-11-10"
 
-TRAIN_END_DATE = "2025-11-08"
-TEST_DATE = "2025-11-09"
+TRAIN_START_DATE = "2025-08-01"
+TRAIN_END_DATE = "2025-08-31"
+
+TEST_START_DATE = "2025-09-01"
+TEST_END_DATE = "2025-09-01"
 
 FOLDER_NAME = "ais-data"
 DELETE_DOWNLOADED_CSV = False
 VERBOSE_MODE = True
-TEST_OUTPUT_CSV = f"runs/test_{TEST_DATE}_scores.csv"
+TEST_OUTPUT_CSV = f"runs/test_{TEST_START_DATE}_{TEST_END_DATE}_scores.csv"
 
 VESSEL_AIS_CLASS = ("Class A", "Class B")
 
-MIN_SEGMENT_LENGTH = 30     # datapoints
+MIN_SEGMENT_LENGTH = 300     # datapoints
 MAX_TIME_GAP_SEC = 30       # seconds
 
 # Bounding Box to prefilter AIS data [lat_max, lon_min, lat_min, lon_max]
@@ -42,8 +45,10 @@ CABLE_POINTS = {
 }
 
 # ---- PRE-PROCESSING CONFIGURATION ----
-PRE_PROCESSING_DF_PATH = f"{FOLDER_NAME}/pre_processed_df.parquet"
-PRE_PROCESSING_METADATA_PATH = f"{FOLDER_NAME}/pre_processing_metadata.json"
+PRE_PROCESSING_DF_TRAIN_PATH = f"{FOLDER_NAME}/df_preprocessed/pre_processed_df_train.parquet"
+PRE_PROCESSING_DF_TEST_PATH = f"{FOLDER_NAME}/df_preprocessed/pre_processed_df_test.parquet"
+PRE_PROCESSING_METADATA_TRAIN_PATH = f"{FOLDER_NAME}/df_preprocessed/pre_processing_metadata_train.json"
+PRE_PROCESSING_METADATA_TEST_PATH = f"{FOLDER_NAME}/df_preprocessed/pre_processing_metadata_test.json"
 RAW_PARQUET_ROOT = f"{FOLDER_NAME}/parquet"
 SHIPTYPE_EMB_DIM = 8
 TEST_BATCH_SIZE = 128
@@ -51,19 +56,18 @@ NUMERIC_COLS = [
     "Latitude", 
     "Longitude",
     "SOG",
-    "COG",
-    "DeltaT"
+    "COG"
 ]
+SEGMENT_MAX_LENGTH = 300  # datapoints
 
 # ---- TRAINING CONFIGURATION ----
-SEGMENT_MAX_LENGTH = 30  # datapoints
 
 BATCH_SIZE = 128
 EPOCHS = 30
 
 HIDDEN_DIM = 64
 LATENT_DIM = 16
-NUM_LAYERS = 1
+NUM_LAYERS = 2
 LEARNING_RATE = 1e-3
 BETA = 1e-3
 
