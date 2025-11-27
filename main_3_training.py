@@ -2,16 +2,15 @@
 
 # File imports
 import config
-import ais_query
+import src.pre_proc.ais_query as ais_query
 
-# Imports
+# Library imports
 from pathlib import Path
 import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
-
 import matplotlib.pyplot as plt
 import math
 

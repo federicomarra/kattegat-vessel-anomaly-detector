@@ -8,7 +8,7 @@ TEST_DATE = "2025-11-09"
 FOLDER_NAME = "ais-data"
 DELETE_DOWNLOADED_CSV = False
 VERBOSE_MODE = True
-TEST_OUTPUT_CSV = "runs/test_2025-11-09_scores.csv"
+TEST_OUTPUT_CSV = f"runs/test_{TEST_DATE}_scores.csv"
 
 VESSEL_AIS_CLASS = ("Class A", "Class B")
 
@@ -66,6 +66,10 @@ LATENT_DIM = 16
 NUM_LAYERS = 1
 LEARNING_RATE = 1e-3
 BETA = 1e-3
+
+# ---- MODEL & RUN CONFIGURATION ----
+
+
 
 MODEL_PATH = "models/dark_vessel_model.pth"
 NUM_WORKERS = 4

@@ -42,7 +42,7 @@ def read_single_ais_df(
 
     query = f"""
     SELECT *
-    FROM read_csv_auto('{csv_path}', AUTO_DETECT=TRUE, quote='"')
+    FROM read_csv_auto('{csv_path}', AUTO_DETECT=TRUE, ignore_errors=TRUE)
     WHERE Latitude <= {lat_max}
       AND Latitude >= {lat_min}
       AND Longitude >= {lon_min}

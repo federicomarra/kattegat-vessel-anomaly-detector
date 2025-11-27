@@ -1,13 +1,18 @@
+# Main testing script for unseen day inference using trained LSTM-VAE model
+
+# File imports
+import config
+from main_3_training import LSTMVAEWithShipType  
+from src.pre_proc.pre_processing_utils import add_delta_t, split_segments_fixed_length, one_hot_encode_nav_status, label_ship_types
+from src.pre_proc.ais_query import query_ais_duckdb
+
+# Library imports
 import json
 import pandas as pd
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
-import config
-from main_training import LSTMVAEWithShipType  
-from pre_processing_utils import add_delta_t, split_segments_fixed_length, one_hot_encode_nav_status, label_ship_types
-from ais_query import query_ais_duckdb
 
 def load_training_artifacts():
     df_train = pd.read_parquet(config.PRE_PROCESSING_DF_PATH)
@@ -178,7 +183,7 @@ def run_inference(df_test, FEATURE_COLS, model, T):
     out = out.sort_values("MSE", ascending=False).reset_index(drop=True)
     return out
 
-def main():
+def main_testing():
     # Load training artifacts
     FEATURE_COLS, NUMERIC_COLS, NAV_ONEHOT_COLS, mean_arr, std_arr, model, T = load_training_artifacts()
 
@@ -223,4 +228,4 @@ def main():
 
 # Entry point
 if __name__ == "__main__":
-    main()
+    main_testing()

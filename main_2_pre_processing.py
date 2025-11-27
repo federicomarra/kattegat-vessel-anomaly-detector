@@ -1,14 +1,14 @@
 # Main pre-processing script
 
-# Imports
+# File imports
+import config
+import src.pre_proc.pre_processing_utils as pre_processing_utils
+import src.pre_proc.ais_query as ais_query
+
+# Library imports
 from pathlib import Path
 import pandas as pd
 import json
-
-# File imports
-import config
-import pre_processing_utils
-import ais_query
 
 VERBOSE_MODE = config.VERBOSE_MODE
 

@@ -1,11 +1,11 @@
 # pip install -r requirements.txt
 
-# Imports
-import ais_downloader
-import ais_filtering
-import ais_reader
-import ais_to_parquet
+# File imports
 import config
+import src.data.ais_downloader as ais_downloader
+import src.data.ais_filtering as ais_filtering
+import src.data.ais_reader as ais_reader
+import src.data.ais_to_parquet as ais_to_parquet
 
 # Setup data
 START_DATE = config.START_DATE
