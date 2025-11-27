@@ -12,7 +12,7 @@ import json
 
 VERBOSE_MODE = config.VERBOSE_MODE
 
-FOLDER_NAME = config.FOLDER_NAME
+FOLDER_NAME = config.AIS_DATA_FOLDER
 folder_path = Path(FOLDER_NAME)
 parquet_folder_path = folder_path / "parquet"
 
@@ -61,6 +61,7 @@ def main_pre_processing(dataframe_type: str = "train"):
         'IMO', 
         'Callsign', 
         'Name', 
+        'Navigational status',
         'Cargo type', 
         'Width', 
         'Length',
@@ -78,6 +79,7 @@ def main_pre_processing(dataframe_type: str = "train"):
 
     # Adding △T feature
     df = pre_processing_utils.add_delta_t(df)
+    df.drop(columns=["DeltaT"], inplace=True)
 
     # Splitting segments
     print(f"[pre_processing] Splitting segments to max length {SEGMENT_MAX_LENGTH}...")
@@ -87,8 +89,7 @@ def main_pre_processing(dataframe_type: str = "train"):
     df, mean, std = pre_processing_utils.normalize_df(df, NUMERIC_COLS)
 
     # Encoding Navicational Status as one-hot
-    df, nav_status_to_id = pre_processing_utils.one_hot_encode_nav_status(df)
-    NAV_ONEHOT_COLS = [c for c in df.columns if c.startswith("NavStatus_")]
+    #df, nav_status_to_id = pre_processing_utils.one_hot_encode_nav_status(df)
 
     # Ship type labeling (mapping to be used later)
     df, ship_type_to_id = pre_processing_utils.label_ship_types(df)
@@ -111,7 +112,7 @@ def main_pre_processing(dataframe_type: str = "train"):
     meta = {
         "mean": mean.tolist(),
         "std": std.tolist(),
-        "nav_status_to_id": nav_status_to_id,
+        #"nav_status_to_id": nav_status_to_id,
         "ship_type_to_id": ship_type_to_id
     }
 

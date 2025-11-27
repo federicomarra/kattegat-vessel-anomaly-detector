@@ -1,20 +1,15 @@
-# ---- DATA CONFIGURATION ----
+# ---- DATA DOWNLOADING ----
+VERBOSE_MODE = True
+
 START_DATE = "2025-10-20"
 END_DATE   = "2025-11-10"
 
-TRAIN_START_DATE = "2025-08-01"
-TRAIN_END_DATE = "2025-08-31"
-
-TEST_START_DATE = "2025-09-01"
-TEST_END_DATE = "2025-09-01"
-
-FOLDER_NAME = "ais-data"
+AIS_DATA_FOLDER = "ais-data"
 DELETE_DOWNLOADED_CSV = False
-VERBOSE_MODE = True
-TEST_OUTPUT_CSV = f"runs/test_{TEST_START_DATE}_{TEST_END_DATE}_scores.csv"
 
+
+#  ---- DATA FILTERING CONFIGURATION ----
 VESSEL_AIS_CLASS = ("Class A", "Class B")
-
 MIN_SEGMENT_LENGTH = 300     # datapoints
 MAX_TIME_GAP_SEC = 30       # seconds
 
@@ -45,44 +40,52 @@ CABLE_POINTS = {
 }
 
 # ---- PRE-PROCESSING CONFIGURATION ----
-PRE_PROCESSING_DF_TRAIN_PATH = f"{FOLDER_NAME}/df_preprocessed/pre_processed_df_train.parquet"
-PRE_PROCESSING_DF_TEST_PATH = f"{FOLDER_NAME}/df_preprocessed/pre_processed_df_test.parquet"
-PRE_PROCESSING_METADATA_TRAIN_PATH = f"{FOLDER_NAME}/df_preprocessed/pre_processing_metadata_train.json"
-PRE_PROCESSING_METADATA_TEST_PATH = f"{FOLDER_NAME}/df_preprocessed/pre_processing_metadata_test.json"
-RAW_PARQUET_ROOT = f"{FOLDER_NAME}/parquet"
-SHIPTYPE_EMB_DIM = 8
-TEST_BATCH_SIZE = 128
-NUMERIC_COLS = [
+TRAIN_START_DATE = "2025-08-01"
+TRAIN_END_DATE = "2025-08-31"
+
+TEST_START_DATE = "2025-09-01"
+TEST_END_DATE = "2025-09-03"
+
+PRE_PROCESSING_DF_TRAIN_PATH = "ais-data/df_preprocessed/pre_processed_df_train.parquet"
+PRE_PROCESSING_DF_TEST_PATH = "ais-data/df_preprocessed/pre_processed_df_test.parquet"
+PRE_PROCESSING_METADATA_TRAIN_PATH = "ais-data/df_preprocessed/pre_processing_metadata_train.json"
+PRE_PROCESSING_METADATA_TEST_PATH = "ais-data/df_preprocessed/pre_processing_metadata_test.json"
+RAW_PARQUET_ROOT = "ais-data/parquet"
+TEST_OUTPUT_CSV = f"runs/test_{TEST_START_DATE}_{TEST_END_DATE}_scores.csv"
+
+SEGMENT_MAX_LENGTH = 300  # datapoints
+
+NUMERIC_COLS = [   # Columns to be normalized
     "Latitude", 
     "Longitude",
     "SOG",
     "COG"
 ]
-SEGMENT_MAX_LENGTH = 300  # datapoints
+# NAV_ONEHOT_COLS = [
+#     'NavStatus_0',
+#     'NavStatus_1',
+#     'NavStatus_2',
+#     'NavStatus_3',
+#     'NavStatus_4',
+#     'NavStatus_5',
+#     'NavStatus_6'
+# ]
+
+FEATURE_COLS = NUMERIC_COLS #+ NAV_ONEHOT_COLS
+
 
 # ---- TRAINING CONFIGURATION ----
-
 BATCH_SIZE = 128
 EPOCHS = 30
-
 HIDDEN_DIM = 64
 LATENT_DIM = 16
 NUM_LAYERS = 2
+SHIPTYPE_EMB_DIM = 8
 LEARNING_RATE = 1e-3
 BETA = 1e-3
 
-# ---- MODEL & RUN CONFIGURATION ----
-
-
-
-MODEL_PATH = "models/dark_vessel_model.pth"
-NUM_WORKERS = 4
-AUGMENTATION_PARAMS = {
-    "rotation_range": 10,
-    "scaling_range": 0.1,
-    "translation_range": 0.1,
-}
-# Data paths
-TRAIN_DATA_PATH = "ais-data/parquet/train/"
-VAL_DATA_PATH = "ais-data/parquet/val/"
-TEST_DATA_PATH = "ais-data/parquet/test/"
+# ---- MODEL EVALUATION ----
+WEIGHTS_PATH = "models/dark_vessel_model.pth"
+PLOT_PATH = "eval/plots"
+PREDICTION_DF_PATH = "eval/val_predictions.parquet"
+MAPS_PATH = "eval/maps"

@@ -64,7 +64,7 @@ def split_segments_fixed_length(df: pd.DataFrame, max_len: int = 30) -> pd.DataF
         # because their Segment_nr stays = -1
 
     # Drop rows that do not belong to a full segment of length max_len
-    df[df["Segment_nr"] != -1]
+    df = df[df["Segment_nr"] != -1].copy()
     df.drop(columns=["Segment_uid"], inplace=True)
 
     return df
