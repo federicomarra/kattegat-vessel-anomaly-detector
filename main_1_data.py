@@ -11,7 +11,7 @@ import src.data.ais_to_parquet as ais_to_parquet
 START_DATE = config.START_DATE
 END_DATE   = config.END_DATE
 
-FOLDER_NAME = config.FOLDER_NAME
+AIS_DATA_FOLDER = config.AIS_DATA_FOLDER
 DELETE_DOWNLOADED_CSV = config.DELETE_DOWNLOADED_CSV
 VERBOSE_MODE = config.VERBOSE_MODE
 
@@ -34,7 +34,7 @@ from datetime import date, timedelta
 
 def main_data():
     # --- Create paths ---
-    folder_path = Path(FOLDER_NAME)
+    folder_path = Path(AIS_DATA_FOLDER)
     folder_path.mkdir(parents=True, exist_ok=True)
     csv_folder_path = folder_path / "csv"
     csv_folder_path.mkdir(parents=True, exist_ok=True)

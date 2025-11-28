@@ -16,8 +16,8 @@ import math
 
 VERBOSE_MODE = config.VERBOSE_MODE
 
-FOLDER_NAME = config.FOLDER_NAME
-folder_path = Path(FOLDER_NAME)
+AIS_DATA_FOLDER = config.AIS_DATA_FOLDER
+folder_path = Path(AIS_DATA_FOLDER)
 parquet_folder_path = folder_path / "parquet"
 
 SEGMENT_MAX_LENGTH = config.SEGMENT_MAX_LENGTH
