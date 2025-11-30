@@ -1,23 +1,29 @@
 # ---- DATA DOWNLOADING ----
 VERBOSE_MODE = True
 
-START_DATE = "2025-10-20"
-END_DATE   = "2025-11-10"
+START_DATE = "2025-08-01"
+END_DATE   = "2025-10-31"
 
 AIS_DATA_FOLDER = "ais-data"
-DELETE_DOWNLOADED_CSV = False
-
+DELETE_DOWNLOADED_CSV = True
 
 #  ---- DATA FILTERING CONFIGURATION ----
 VESSEL_AIS_CLASS = ("Class A", "Class B")
 MIN_SEGMENT_LENGTH = 300     # datapoints
 MAX_TIME_GAP_SEC = 30       # seconds
 
+# ---- SOG FILTERING CONFIGURATION ----
+REMOVE_ZERO_SOG_VESSELS = False
+SOG_IN_MS = True
+SOG_MIN_KNOTS = 0.0
+SOG_MAX_KNOTS = 35.0
+
+
 # Bounding Box to prefilter AIS data [lat_max, lon_min, lat_min, lon_max]
 BBOX = [57.58, 10.5, 57.12, 11.92]
 
 # Polygon coordinates for precise Area of Interest (AOI) filtering (lon, lat)
-POLYCORDS_COORDINATES = [
+POLYGON_COORDINATES = [
     (10.5162, 57.3500),  # coast top left (lon, lat)
     (10.9314, 57.5120),  # sea top left
     (11.5128, 57.5785),  # sea top right

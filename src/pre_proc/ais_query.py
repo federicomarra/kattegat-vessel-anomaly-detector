@@ -8,6 +8,8 @@ import pandas as pd
 def query_ais_duckdb(
     root_path: Union[str, Path] = "ais-data/parquet",
     dates: Optional[Union[str, Sequence[str]]] = None,
+    date_start: Optional[str] = None,
+    date_end: Optional[str] = None,
     mmsi: Optional[Union[str, Sequence[str]]] = None,
     segments: Optional[Union[int, Sequence[int]]] = None,
     columns: Optional[Sequence[str]] = None,
@@ -20,10 +22,16 @@ def query_ais_duckdb(
     Parameters
     ----------
     root_path : str or Path, optional
-        Root directory of the parquet dataset (default: "ais_data_parquet").
+        Root directory of the parquet dataset (default: "ais-data/parquet").
     dates : str or list[str], optional
         Date(s) to filter on (e.g. "2025-11-05", or ["2025-11-05", "2025-11-06"]).
-        If None, no date filter is applied.
+        If None, no explicit date list filter is applied.
+    date_start : str, optional
+        Start date (inclusive) for a date range filter (e.g. "2025-09-01").
+        If provided, rows with Date >= date_start are selected.
+    date_end : str, optional
+        End date (inclusive) for a date range filter (e.g. "2025-10-01").
+        If provided, rows with Date <= date_end are selected.
     mmsi : str or list[str], optional
         MMSI or list of MMSIs to filter on. If None, no MMSI filter is applied.
     segments : int or list[int], optional
@@ -40,10 +48,19 @@ def query_ais_duckdb(
 
     Examples
     --------
+    # Single day
     >>> df = query_ais_duckdb(dates="2025-11-05")
-    >>> df = query_ais_duckdb(dates="2025-11-05", mmsi="219000123")
+
+    # Multiple explicit dates
+    >>> df = query_ais_duckdb(dates=["2025-11-05", "2025-11-06"], mmsi="219000123")
+
+    # Date range from 2025-09-01 to 2025-10-01 (inclusive)
+    >>> df = query_ais_duckdb(date_start="2025-09-01", date_end="2025-10-01")
+
+    # Date range + subset of columns
     >>> df = query_ais_duckdb(
-    ...     dates=["2025-11-05", "2025-11-06"],
+    ...     date_start="2025-09-01",
+    ...     date_end="2025-10-01",
     ...     mmsi=["219000123", "219000456"],
     ...     columns=["MMSI", "Timestamp", "Latitude", "Longitude"]
     ... )
@@ -80,12 +97,23 @@ def query_ais_duckdb(
 
     sql = f"SELECT {col_expr} FROM read_parquet('{parquet_glob}') WHERE 1=1"
 
+    # Explicit date list filter (same behavior as before)
     if dates_list is not None:
         sql += f" AND Date IN ({_sql_list_str([str(d) for d in dates_list])})"
 
+    # New: date range filters (inclusive)
+    if date_start is not None and date_end is not None:
+        sql += f" AND Date BETWEEN '{date_start}' AND '{date_end}'"
+    elif date_start is not None:
+        sql += f" AND Date >= '{date_start}'"
+    elif date_end is not None:
+        sql += f" AND Date <= '{date_end}'"
+
+    # MMSI filter
     if mmsi_list is not None:
         sql += f" AND MMSI IN ({_sql_list_str([str(m) for m in mmsi_list])})"
 
+    # Segment filter
     if segments_list is not None:
         sql += f" AND Segment IN ({_sql_list_int([int(s) for s in segments_list])})"
 

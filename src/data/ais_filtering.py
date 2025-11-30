@@ -242,16 +242,15 @@ def split_static_dynamic(df, join_conflicts=True, verbose_mode=False, sep=" | ")
     return static_df, dynamic_df
 
 
-
-
 def filter_ais_df(
     df: pd.DataFrame,
     polygon_coords: Sequence[tuple[float, float]],
     allowed_mobile_types: Optional[Sequence[str]] = ("Class A", "Class B"),
-    bbox: Optional[Sequence[float]] = None,
     apply_polygon_filter: bool = True,
     remove_zero_sog_vessels: bool = True,
-    sog_in_knots: bool = True,
+    output_sog_in_ms: bool = True,         
+    sog_min_knots: float | None = 0.0,      
+    sog_max_knots: float | None = 35.0,     
     port_locodes_path: Path = None,
     exclude_ports: bool = True,
     verbose: bool = False,
@@ -264,10 +263,10 @@ def filter_ais_df(
     1) Optional filter by "Type of mobile" 
     2) MMSI sanity checks (length == 9 and MID in [200, 775])
     3) Drop duplicates on (Timestamp, MMSI)
-    4) Optional bounding box filter
-    5) Optional polygon filtering using Shapely (lon, lat)
-    6) Optional removal of AIS points inside port polygons
-    7) Convert SOG from knots to m/s (if sog_in_knots=True)
+    4) Optional polygon filtering using Shapely (lon, lat)
+    5) Optional removal of AIS points inside port polygons
+    6) SOG sanity filter (remove unrealistic speeds; assumes input SOG in knots)
+    7) Optional conversion of SOG from knots to m/s (if output_sog_in_ms=True)
     8) Optional removal of ships with >90% zero SOG
 
     Parameters
@@ -275,16 +274,21 @@ def filter_ais_df(
     df : pd.DataFrame
         Input AIS DataFrame with:
         ["Latitude", "Longitude", "MMSI", "SOG", "Timestamp" or "# Timestamp"].
+        SOG is assumed to be in knots on input.
     polygon_coords : Sequence[tuple[float, float]]
         Polygon vertices as (lon, lat) pairs.
     allowed_mobile_types : Sequence[str] or None
         Allowed types of mobile (e.g., Class A or B AIS transponders).
-    bbox : [north_lat, west_lon, south_lat, east_lon] or None
     apply_polygon_filter : bool
     remove_zero_sog_vessels : bool
         If True, removes ships with >90% SOG==0.
-    sog_in_knots : bool
-        If True, convert SOG (knots → m/s).
+    output_sog_in_ms : bool
+        If True, convert SOG (knots → m/s) before returning.
+        If False, keep SOG in knots.
+    sog_min_knots : float or None
+        Minimum realistic SOG (in knots). Use None to skip lower bound.
+    sog_max_knots : float or None
+        Maximum realistic SOG (in knots). Use None to skip upper bound.
     port_locodes_path : str or None
         Path to port_locodes.csv containing port polygons.
     exclude_ports : bool
@@ -369,27 +373,7 @@ def filter_ais_df(
         )
 
     # ------------------------------------------------------------------
-    # 4) Optional bounding box filtering
-    # ------------------------------------------------------------------
-    if bbox is not None:
-        north, west, south, east = bbox
-        before = len(df)
-
-        df = df[
-            (df["Latitude"] <= north)
-            & (df["Latitude"] >= south)
-            & (df["Longitude"] >= west)
-            & (df["Longitude"] <= east)
-        ]
-
-        if verbose:
-            print(
-                f" [filter_ais_df] BBOX filtering: {len(df):,} rows "
-                f"(removed {before - len(df):,}), {df['MMSI'].nunique():,} vessels"
-            )
-
-    # ------------------------------------------------------------------
-    # 5) Polygon filtering (vectorized)
+    # 4) Polygon filtering (vectorized)
     # ------------------------------------------------------------------
     main_polygon = None
     if apply_polygon_filter and polygon_coords is not None:
@@ -409,7 +393,7 @@ def filter_ais_df(
             )
 
     # ------------------------------------------------------------------
-    # 6) Remove AIS points inside port polygons (from port_locodes.csv)
+    # 5) Remove AIS points inside port polygons (from port_locodes.csv)
     # ------------------------------------------------------------------
     if (
         exclude_ports
@@ -417,7 +401,6 @@ def filter_ais_df(
         and apply_polygon_filter
         and polygon_coords is not None
     ):
-        # Load the port polygons from CSV: name;locode;lon lat,lon lat,...
         ports_df = pd.read_csv(
             port_locodes_path,
             sep=";",
@@ -443,7 +426,6 @@ def filter_ais_df(
             lambda s: Polygon(parse_coord_string(s))
         )
 
-        # Intersect only with the area we're actually using
         if main_polygon is None:
             main_polygon = Polygon(polygon_coords)
 
@@ -470,9 +452,33 @@ def filter_ais_df(
             print(" [filter_ais_df] No port polygons intersect the main polygon; skipping port removal.")
 
     # ------------------------------------------------------------------
-    # 7) SOG conversion to m/s
+    # 6) SOG sanity filter (in knots)
     # ------------------------------------------------------------------
-    if sog_in_knots:
+    df["SOG"] = pd.to_numeric(df["SOG"], errors="coerce")
+    df = df.dropna(subset=["SOG"])
+
+    if sog_min_knots is not None or sog_max_knots is not None:
+        before = len(df)
+        mask = pd.Series(True, index=df.index)
+
+        if sog_min_knots is not None:
+            mask &= df["SOG"] >= sog_min_knots
+        if sog_max_knots is not None:
+            mask &= df["SOG"] <= sog_max_knots
+
+        df = df[mask]
+
+        if verbose:
+            print(
+                f" [filter_ais_df] SOG sanity: {len(df):,} rows "
+                f"(removed {before - len(df):,}) "
+                f"with range [{sog_min_knots}, {sog_max_knots}] knots"
+            )
+
+    # ------------------------------------------------------------------
+    # 7) SOG conversion to m/s (optional)
+    # ------------------------------------------------------------------
+    if output_sog_in_ms:
         df["SOG"] = df["SOG"].astype(float) * 0.514444
 
     # ------------------------------------------------------------------
@@ -491,9 +497,11 @@ def filter_ais_df(
             )
 
     if verbose:
+        unit = "m/s" if output_sog_in_ms else "knots"
         print(
             f" [filter_ais_df] Final: {len(df):,} rows, "
-            f"{df['MMSI'].nunique():,} unique vessels"
+            f"{df['MMSI'].nunique():,} unique vessels "
+            f"(SOG in {unit})"
         )
 
     return df
