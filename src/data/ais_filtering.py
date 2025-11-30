@@ -19,6 +19,7 @@ def filter_ais_df(
     exclude_ports: bool = True,
     verbose: bool = False,
 ) -> pd.DataFrame:
+    
     """
     Apply AIS filtering steps to a DataFrame.
 
