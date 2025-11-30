@@ -1,22 +1,22 @@
 # ---- DATA DOWNLOADING ----
 VERBOSE_MODE = True
 
-START_DATE = "2025-08-01"
-END_DATE   = "2025-10-31"
+START_DATE = "2025-08-01"  # Start date for data downloading
+END_DATE   = "2025-10-31"  # End date for data downloading
 
-AIS_DATA_FOLDER = "ais-data"
-DELETE_DOWNLOADED_CSV = True
+AIS_DATA_FOLDER = "ais-data" # Root folder to store AIS data
+DELETE_DOWNLOADED_CSV = False 
 
 #  ---- DATA FILTERING CONFIGURATION ----
 VESSEL_AIS_CLASS = ("Class A", "Class B")
 MIN_SEGMENT_LENGTH = 300     # datapoints
-MAX_TIME_GAP_SEC = 30       # seconds
+MAX_TIME_GAP_SEC = 30        # seconds
 
 # ---- SOG FILTERING CONFIGURATION ----
-REMOVE_ZERO_SOG_VESSELS = False
-SOG_IN_MS = True
-SOG_MIN_KNOTS = 0.0
-SOG_MAX_KNOTS = 35.0
+REMOVE_ZERO_SOG_VESSELS = False # Whether to remove vessels with zero Speed Over Ground
+SOG_IN_MS = True                # If True, SOG is in meters/second; if False, SOG is in knots
+SOG_MIN_KNOTS = 0.0             # Minimum SOG in knots
+SOG_MAX_KNOTS = 35.0            # Maximum SOG in knots
 
 
 # Bounding Box to prefilter AIS data [lat_max, lon_min, lat_min, lon_max]
