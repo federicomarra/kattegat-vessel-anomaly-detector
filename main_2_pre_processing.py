@@ -76,6 +76,19 @@ def main_pre_processing(dataframe_type: str = "train"):
     df.dropna(inplace=True)
     print(f"[pre_processing] Data size after dropping: {len(df)} records.")
 
+    # Grouping Ship types
+    commercial_types = ["Cargo", "Tanker"]
+    passenger_types = ["Passenger", "Pleasure", "Sailing"]
+    service_types = ["Dredging", "Law enforcement", "Military", "Port tender", "SAR", "Towing", "Towing long/wide","Tug"]
+    valid_types =  ["Fishing", "Service", "Commercial", "Passenger"]
+
+    df.loc[df["Ship type"].isin(commercial_types), "Ship type"] = "Commercial"
+    df.loc[df["Ship type"].isin(passenger_types), "Ship type"] = "Passenger"
+    df.loc[df["Ship type"].isin(service_types), "Ship type"] = "Service"
+    df.loc[~df["Ship type"].isin(valid_types), "Ship type"] = "Other"
+
+    print("[pre_processing] Ship type counts:")
+    print(df["Ship type"].value_counts())
 
     # Adding △T feature
     df = pre_processing_utils.add_delta_t(df)
