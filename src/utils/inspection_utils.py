@@ -80,6 +80,38 @@ def denormalize_predictions(df: pd.DataFrame, metadata_path: str) -> pd.DataFram
         new_df[f"pred_{feat}"] = new_df[f"pred_{feat}"].apply(
             lambda lst: [x * s + m for x in lst]
     )
+        
+    # reconstruct COG (degrees) from sin/cos components for real and pred
+    def _reconstruct_angle_deg(sin_seq, cos_seq):
+        if sin_seq is None or cos_seq is None:
+            return []
+        out = []
+        for s, c in zip(sin_seq, cos_seq):
+            try:
+                if s is None or c is None or (isinstance(s, float) and np.isnan(s)) or (isinstance(c, float) and np.isnan(c)):
+                    out.append(None)
+                else:
+                    out.append(float((np.degrees(np.arctan2(s, c)) + 360.0) % 360.0))
+            except Exception:
+                out.append(None)
+        return out
+
+    if "real_COG_sin" in new_df.columns and "real_COG_cos" in new_df.columns:
+        new_df["real_COG"] = [
+            _reconstruct_angle_deg(sin_seq, cos_seq)
+            for sin_seq, cos_seq in zip(new_df["real_COG_sin"], new_df["real_COG_cos"])
+        ]
+
+    if "pred_COG_sin" in new_df.columns and "pred_COG_cos" in new_df.columns:
+        new_df["pred_COG"] = [
+            _reconstruct_angle_deg(sin_seq, cos_seq)
+            for sin_seq, cos_seq in zip(new_df["pred_COG_sin"], new_df["pred_COG_cos"])
+        ]
+
+    # drop the sin/cos columns to avoid confusion (if present)
+    for col in ("real_COG_sin", "real_COG_cos", "pred_COG_sin", "pred_COG_cos"):
+        if col in new_df.columns:
+            new_df.drop(columns=col, inplace=True)
     
 
     # Map ShipTypeID to ShipType
@@ -87,8 +119,6 @@ def denormalize_predictions(df: pd.DataFrame, metadata_path: str) -> pd.DataFram
 
 
     return new_df
-
-
 
 
 

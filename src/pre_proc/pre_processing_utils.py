@@ -1,8 +1,13 @@
 import pandas as pd
 from typing import List
+import numpy as np
+import config
 
 
-def add_delta_t(df: pd.DataFrame) -> pd.DataFrame:
+def add_delta_t_and_segment_uid(df: pd.DataFrame, deltat: bool, segment_uid: bool) -> pd.DataFrame:
+    if not deltat and not segment_uid:
+        return df
+    
     # ensure Timestamp is datetime
     if 'Timestamp' in df.columns and not pd.api.types.is_datetime64_any_dtype(df['Timestamp']):
         df['Timestamp'] = pd.to_datetime(df['Timestamp'])
@@ -11,12 +16,13 @@ def add_delta_t(df: pd.DataFrame) -> pd.DataFrame:
     # sort including Day to keep chronological order within each day-segment
     df = df.sort_values(["MMSI", "Segment", "Day", "Timestamp"])
 
-    # compute time differences within each (MMSI, Segment, Day) group
-    df["DeltaT"] = df.groupby(["MMSI", "Segment", "Day"])["Timestamp"] \
-                     .diff().dt.total_seconds().fillna(0)
-
-    # Add unique per-day segment identifier (useful downstream)
-    df['Segment_uid'] = df['MMSI'].astype(str) + '_' + df['Segment'].astype(str) + '_' + df['Day'].astype(str)
+    if deltat:
+        # compute time differences within each (MMSI, Segment, Day) group
+        df["DeltaT"] = df.groupby(["MMSI", "Segment", "Day"])["Timestamp"] \
+                         .diff().dt.total_seconds().fillna(0)
+    if segment_uid:
+        # Add unique per-day segment identifier (useful downstream)
+        df['Segment_uid'] = df['MMSI'].astype(str) + '_' + df['Segment'].astype(str) + '_' + df['Day'].astype(str)
 
     df.drop(columns=["Day", "Segment"], inplace=True)
 
@@ -103,10 +109,8 @@ def one_hot_encode_nav_status(df: pd.DataFrame) -> dict:
     return df, nav_label_to_id
 
 def label_ship_types(df: pd.DataFrame) -> dict:
-    # Create an integer ID for each ship type
-    df["ShipTypeID"] = df["Ship type"].astype("category").cat.codes
-    ship_cat = df["Ship type"].astype("category")
-    ship_label_to_id = dict(enumerate(ship_cat.cat.categories))  # id -> label
+    # Assign IDs according to mapping;
+    df["ShipTypeID"] = df["Ship type"].map(lambda x: config.SHIPTYPE_TO_ID.get(x, 2)).astype(int)
     df.drop(columns=["Ship type"], inplace=True)
 
-    return df, ship_label_to_id
+    return df, config.ID_TO_SHIPTYPE

@@ -159,6 +159,135 @@ def create_ship_path_html(df, mmsi, out_html=None, center=None, n_points=24, zoo
         
     return m
 
+
+
+def create_all_ships_paths_html(df, out_html="all_ships_map.html",
+                                center=None, zoom_start=9,
+                                n_points_per_ship=24):
+    """
+    Creates a Folium map with the paths of ALL ships (all MMSIs) 
+    present in the dataframe.
+
+    Parameters:
+    - df: DataFrame with at least columns: 'MMSI', 'Latitude', 'Longitude', 'Timestamp'
+      (optional: 'Name', 'Ship type'/'ShipType')
+    - out_html: name of the output HTML file.
+    - center: [lat, lon] to center the map. If None, uses the mean of the dataset.
+    - zoom_start: initial zoom level.
+    - n_points_per_ship: number of "sampled" points for markers for each ship.
+    """
+
+    if df.empty:
+        print("Empty DataFrame: no ships to plot.")
+        return None
+
+    # Ensure Timestamp is datetime
+    if 'Timestamp' in df.columns and not pd.api.types.is_datetime64_any_dtype(df['Timestamp']):
+        df = df.copy()
+        df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+
+    # Center of the map
+    if center is None:
+        center_lat = df['Latitude'].mean()
+        center_lon = df['Longitude'].mean()
+        center_use = [center_lat, center_lon]
+    else:
+        center_use = center
+
+    m = folium.Map(location=center_use, zoom_start=zoom_start, tiles="CartoDB positron")
+
+    # Base color palette to cycle through for ships
+    colors = [
+        "blue", "red", "green", "purple", "orange",
+        "darkred", "lightred", "beige", "darkblue", "darkgreen",
+        "cadetblue", "darkpurple", "white", "pink", "lightblue",
+        "lightgreen", "gray", "black", "lightgray"
+    ]
+
+    # Group by MMSI
+    df['MMSI_str'] = df['MMSI'].astype(str)
+    unique_mmsi = df['MMSI_str'].unique()
+
+    print(f"Found {len(unique_mmsi)} MMSIs in the DataFrame.")
+    for idx, mmsi_str in enumerate(unique_mmsi):
+        vessel = df[df['MMSI_str'] == mmsi_str].copy()
+        if vessel.empty:
+            continue
+
+        # Sort by time if available
+        if 'Timestamp' in vessel.columns:
+            vessel = vessel.sort_values('Timestamp')
+
+        # Choose a color for this ship
+        color = colors[idx % len(colors)]
+
+        # Retrieve some static info from the first row (if available)
+        first_row = vessel.iloc[0]
+        ship_name = str(first_row.get('Name', 'Unknown'))
+        ship_type = str(first_row.get('Ship type', first_row.get('ShipType', '-')))
+
+        # Create a FeatureGroup for each ship, so they can be toggled on/off
+        fg = folium.FeatureGroup(name=f"{ship_name} ({mmsi_str})")
+
+        # 1) Polyline with ALL points
+        path_coords = vessel[['Latitude', 'Longitude']].values.tolist()
+        if len(path_coords) < 2:
+            # little movement, skip the polyline but still show the marker
+            pass
+        else:
+            folium.PolyLine(
+                path_coords,
+                color=color,
+                weight=3,
+                opacity=0.7,
+                tooltip=f"MMSI: {mmsi_str} | {ship_name}"
+            ).add_to(fg)
+
+        # 2) Markers only on some points (sampled)
+        if n_points_per_ship is not None and len(vessel) > 0:
+            # sample evenly spaced indices
+            if len(vessel) <= n_points_per_ship:
+                subset = vessel
+            else:
+                sample_indices = np.linspace(0, len(vessel) - 1, n_points_per_ship).astype(int)
+                subset = vessel.iloc[sample_indices]
+
+            for _, row in subset.iterrows():
+                lat = row['Latitude']
+                lon = row['Longitude']
+                ts = row.get('Timestamp', '-')
+                sog = row.get('SOG', '-')
+                info_html = f"""
+                <b>MMSI:</b> {mmsi_str}<br>
+                <b>Name:</b> {ship_name}<br>
+                <b>Type:</b> {ship_type}<br>
+                <b>Time:</b> {ts}<br>
+                <b>SOG:</b> {sog} kn
+                """
+                folium.CircleMarker(
+                    location=[lat, lon],
+                    radius=4,
+                    color=color,
+                    fill=True,
+                    fill_color=color,
+                    fill_opacity=0.8,
+                    popup=folium.Popup(info_html, max_width=250),
+                    tooltip=f"{ship_name} | MMSI: {mmsi_str}"
+                ).add_to(fg)
+
+        fg.add_to(m)
+
+    # Layer control to toggle ships on/off
+    folium.LayerControl(collapsed=False).add_to(m)
+
+    # Save HTML
+    if out_html:
+        m.save(out_html)
+        print(f"Map with all ships saved to: {out_html}")
+
+    return m
+
+
 def create_cable_risk_heatmap(df, dist_threshold=2000, out_html="cable_risk_map.html"):
     
     """

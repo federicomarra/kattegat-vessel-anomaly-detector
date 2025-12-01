@@ -96,8 +96,7 @@ def main_pre_processing(dataframe_type: str = "all"):
     print(df["Ship type"].value_counts())
 
     # Adding △T feature
-    df = pre_processing_utils.add_delta_t(df)
-    df.drop(columns=["DeltaT"], inplace=True)
+    df = pre_processing_utils.add_delta_t_and_segment_uid(df, deltat=False, segment_uid=True)
 
     # Splitting segments
     print(f"[pre_processing] Splitting segments to max length {SEGMENT_MAX_LENGTH}...")

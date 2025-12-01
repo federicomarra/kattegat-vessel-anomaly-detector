@@ -117,16 +117,11 @@ def make_plots(
     #     filename=f"{PLOT_PATH}/pr_curve_synthetic.png",
     # )
 
-    # ---- Plot ispezione feature per segmenti reali e sintetici ----
-    # assumiamo prime 4 feature: lat, lon, sog, cog
-    feature_indices = [0, 1, 2, 3]
-    feature_names = {
-        0: "Latitude",
-        1: "Longitude",
-        2: "SOG",
-        3: "COG",
-    }
-
+    # ---- Plot inspection feature for real and synthetic segments ----
+    # assuming first 4 features: lat, lon, sog, cog_sin, cog_cos
+    feature_indices = config.FEATURE_INDICES
+    feature_names = config.FEATURE_NAMES
+    
     # reali: prendiamo dataset di test
     test_dataset = test_loader.dataset  # AISTrajectoryDataset
     plot_inspection_real_sequences(

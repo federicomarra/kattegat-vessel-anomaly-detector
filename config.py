@@ -67,8 +67,27 @@ NUMERIC_COLS = [   # Columns to be normalized
     "Latitude", 
     "Longitude",
     "SOG",
-    "COG"
+    "COG_sin",
+    "COG_cos",
 ]
+
+SHIPTYPE_TO_ID = {
+    "Commercial": 0,
+    "Fishing": 1,
+    "Other": 2,
+    "Passenger": 3,
+    "Service": 4,
+}
+
+ID_TO_SHIPTYPE = {
+    0: "Commercial",
+    1: "Fishing",
+    2: "Other",
+    3: "Passenger",
+    4: "Service",
+}
+
+
 # NAV_ONEHOT_COLS = [
 #     'NavStatus_0',
 #     'NavStatus_1',
@@ -98,3 +117,13 @@ PLOT_PATH = "eval/plots"
 PREDICTION_DF_PATH = "eval/predictions_df.parquet"
 PREDICTION_DENORM_DF_PATH = "eval/predictions_denorm_df.parquet"
 MAPS_PATH = "eval/maps"
+
+
+FEATURE_INDICES = [0, 1, 2, 3, 4]
+FEATURE_NAMES = {
+    0: "Latitude",
+    1: "Longitude",
+    2: "SOG",
+    3: "COG_sin",
+    4: "COG_cos",
+}
