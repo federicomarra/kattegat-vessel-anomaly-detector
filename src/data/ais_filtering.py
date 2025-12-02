@@ -253,6 +253,9 @@ def filter_ais_df(
             f"{df['MMSI'].nunique():,} unique vessels "
             f"(SOG in {unit})"
         )
+        
+    # --- Add Date ---
+    df["Date"] = df["Timestamp"].dt.strftime("%Y-%m-%d")
 
     return df
 
