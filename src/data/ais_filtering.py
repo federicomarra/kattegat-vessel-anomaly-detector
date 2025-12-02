@@ -30,42 +30,10 @@ def filter_ais_df(
     3) Drop duplicates on (Timestamp, MMSI)
     4) Optional polygon filtering using Shapely (lon, lat)
     5) Optional removal of AIS points inside port polygons
-    6) SOG sanity filter (remove unrealistic speeds; assumes input SOG in knots)
-    7) Optional conversion of SOG from knots to m/s (if output_sog_in_ms=True)
-    8) Optional removal of ships with >90% zero SOG
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input AIS DataFrame with:
-        ["Latitude", "Longitude", "MMSI", "SOG", "Timestamp" or "# Timestamp"].
-        SOG is assumed to be in knots on input.
-    polygon_coords : Sequence[tuple[float, float]]
-        Polygon vertices as (lon, lat) pairs.
-    allowed_mobile_types : Sequence[str] or None
-        Allowed types of mobile (e.g., Class A or B AIS transponders).
-    apply_polygon_filter : bool
-    remove_zero_sog_vessels : bool
-        If True, removes ships with >90% SOG==0.
-    output_sog_in_ms : bool
-        If True, convert SOG (knots → m/s) before returning.
-        If False, keep SOG in knots.
-    sog_min_knots : float or None
-        Minimum realistic SOG (in knots). Use None to skip lower bound.
-    sog_max_knots : float or None
-        Maximum realistic SOG (in knots). Use None to skip upper bound.
-    port_locodes_path : str or None
-        Path to port_locodes.csv containing port polygons.
-    exclude_ports : bool
-        If True and port_locodes_path is provided, remove AIS points
-        that fall inside any overlapping port polygon.
-    verbose : bool
-        Print filtering info.
-
-    Returns
-    -------
-    pd.DataFrame
-        Filtered AIS DataFrame.
+    6) COG sanity filter (keep only 0–360 deg)
+    7) SOG sanity filter (remove unrealistic speeds; assumes input SOG in knots)
+    8) Optional conversion of SOG from knots to m/s (if output_sog_in_ms=True)
+    9) Optional removal of ships with >90% zero SOG
     """
 
     df = df.copy()
@@ -217,9 +185,25 @@ def filter_ais_df(
             print(" [filter_ais_df] No port polygons intersect the main polygon; skipping port removal.")
 
     # ------------------------------------------------------------------
-    # 6) SOG sanity filter (in knots)
+    # 6) COG sanity filter (0–360 degrees)
     # ------------------------------------------------------------------
-    
+    if "COG" in df.columns:
+        df["COG"] = pd.to_numeric(df["COG"], errors="coerce")
+        before = len(df)
+        df = df.dropna(subset=["COG"])
+        df = df[(df["COG"] >= 0.0) & (df["COG"] <= 360.0)]
+
+        if verbose:
+            print(
+                f" [filter_ais_df] COG sanity: {len(df):,} rows "
+                f"(removed {before - len(df):,}) with range [0, 360] deg"
+            )
+    elif verbose:
+        print(" [filter_ais_df] Warning: 'COG' column not found, skipping COG filter.")
+
+    # ------------------------------------------------------------------
+    # 7) SOG sanity filter (in knots)
+    # ------------------------------------------------------------------
     df["SOG"] = pd.to_numeric(df["SOG"], errors="coerce")
     df = df.dropna(subset=["SOG"])
 
@@ -242,13 +226,13 @@ def filter_ais_df(
             )
 
     # ------------------------------------------------------------------
-    # 7) SOG conversion to m/s (optional)
+    # 8) SOG conversion to m/s (optional)
     # ------------------------------------------------------------------
     if output_sog_in_ms:
         df["SOG"] = df["SOG"].astype(float) * 0.514444
 
     # ------------------------------------------------------------------
-    # 8) Remove vessels with >90% zero SOG
+    # 9) Remove vessels with >90% zero SOG
     # ------------------------------------------------------------------
     if remove_zero_sog_vessels:
         sog_zero_fraction = df.groupby("MMSI")["SOG"].apply(lambda x: (x <= 0).mean())
@@ -271,3 +255,4 @@ def filter_ais_df(
         )
 
     return df
+

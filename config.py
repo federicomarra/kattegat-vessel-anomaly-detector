@@ -16,6 +16,7 @@ VESSEL_AIS_CLASS = ("Class A", "Class B")
 MIN_SEGMENT_LENGTH = 300     # datapoints
 MAX_TIME_GAP_SEC = 30        # seconds
 MIN_TRACK_DURATION_SEC = 60 * 60  # seconds
+MAX_TRACJK_DURATION_SEC = 6 * 60 * 60  # seconds
 
 # ---- SOG FILTERING CONFIGURATION ----
 REMOVE_ZERO_SOG_VESSELS = False # Whether to remove vessels with zero Speed Over Ground

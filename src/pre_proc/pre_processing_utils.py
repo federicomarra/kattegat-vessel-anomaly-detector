@@ -29,7 +29,6 @@ def add_delta_t_and_segment_uid(df: pd.DataFrame, deltat: bool, segment_uid: boo
     return df
 
 
-
 def split_segments_fixed_length(df: pd.DataFrame, max_len: int = 30) -> pd.DataFrame:
     """
     Takes a DataFrame with a base segment id (Segment_uid) that marks
@@ -76,7 +75,6 @@ def split_segments_fixed_length(df: pd.DataFrame, max_len: int = 30) -> pd.DataF
     return df
 
 
-
 def normalize_df(df: pd.DataFrame, numeric_cols: List[str]):
     all_values = df[numeric_cols].to_numpy(dtype=float)
 
@@ -108,12 +106,14 @@ def one_hot_encode_nav_status(df: pd.DataFrame) -> dict:
 
     return df, nav_label_to_id
 
+
 def label_ship_types(df: pd.DataFrame) -> dict:
     # Assign IDs according to mapping;
     df["ShipTypeID"] = df["Ship type"].map(lambda x: config.SHIPTYPE_TO_ID.get(x, 2)).astype(int)
     df.drop(columns=["Ship type"], inplace=True)
 
     return df, config.ID_TO_SHIPTYPE
+
 
 def cog_to_sin_cos(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -133,6 +133,7 @@ def cog_to_sin_cos(df: pd.DataFrame) -> pd.DataFrame:
         raise ValueError("Column 'COG' not found in DataFrame.")
     
     return df
+
 
 def easy_resample_interpolate(df_segment: pd.DataFrame, rule: str = '2min') -> pd.DataFrame:
     """
@@ -181,6 +182,7 @@ def easy_resample_interpolate(df_segment: pd.DataFrame, rule: str = '2min') -> p
     resampled = resampled.dropna(subset=['Latitude', 'Longitude'])
 
     return resampled.reset_index()
+
 
 def resample_all_tracks(df: pd.DataFrame, rule: str = '2min') -> pd.DataFrame:
     """
