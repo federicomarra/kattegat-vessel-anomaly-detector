@@ -4,7 +4,7 @@
 VERBOSE_MODE = True
 
 START_DATE = "2025-08-01"  # Start date for data downloading
-END_DATE   = "2025-10-31"  # End date for data downloading
+END_DATE   = "2025-08-03"  # End date for data downloading
 
 AIS_DATA_FOLDER = "ais-data" # Root folder to store AIS data
 DELETE_DOWNLOADED_ZIP = True  # Whether to delete downloaded zip files after extraction
@@ -12,11 +12,6 @@ DELETE_DOWNLOADED_CSV = False # Whether to delete downloaded CSV files after pro
 
 #  ---- DATA FILTERING CONFIGURATION ----
 VESSEL_AIS_CLASS = ("Class A", "Class B")
-
-MIN_SEGMENT_LENGTH = 300     # datapoints
-MAX_TIME_GAP_SEC = 30        # seconds
-MIN_TRACK_DURATION_SEC = 60 * 60  # seconds
-MAX_TRACJK_DURATION_SEC = 6 * 60 * 60  # seconds
 
 # ---- SOG FILTERING CONFIGURATION ----
 REMOVE_ZERO_SOG_VESSELS = False # Whether to remove vessels with zero Speed Over Ground
@@ -53,10 +48,23 @@ CABLE_POINTS = {
 
 # ---- PRE-PROCESSING CONFIGURATION ----
 TRAIN_START_DATE = "2025-08-01"
-TRAIN_END_DATE = "2025-08-31"
+TRAIN_END_DATE = "2025-08-28"
 
-TEST_START_DATE = "2025-09-01"
-TEST_END_DATE = "2025-09-03"
+TEST_START_DATE = "2025-08-29"
+TEST_END_DATE = "2025-08-30"
+
+
+MAX_TIME_GAP_SEC = 15 * 60              # 15 minutes in seconds
+
+MAX_TRACK_DURATION_SEC = 12 * 60 * 60   # 12 hours in seconds
+
+MIN_TRACK_DURATION_SEC = 10 * 60        # 10 minutes in seconds
+
+MIN_SEGMENT_LENGTH = 300     # datapoints
+
+RESAMPLING_RULE = "1min"  # Resampling rule for time series data
+
+
 
 PRE_PROCESSING_DF_TRAIN_PATH = "ais-data/df_preprocessed/pre_processed_df_train.parquet"
 PRE_PROCESSING_DF_TEST_PATH = "ais-data/df_preprocessed/pre_processed_df_test.parquet"

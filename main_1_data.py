@@ -87,11 +87,13 @@ def main_data():
         )
         
         # --- Parquet conversion ---
-        # Segment and save to Parquet by MMSI
-        df_seg = ais_to_parquet.segment_ais_tracks(df_filtered, min_track_len=MIN_SEGMENT_LENGTH, max_time_gap_sec=MAX_TIME_GAP_SEC, min_track_duration_sec=MIN_TRACK_DURATION_SEC, verbose=VERBOSE_MODE)
-        # Save segmented data to Parquet files
-        ais_to_parquet.save_by_mmsi(df_seg, verbose=VERBOSE_MODE, output_folder=parquet_folder_path)
-        
+        # Save to Parquet by MMSI
+        ais_to_parquet.save_by_mmsi(
+            df_filtered,                                             # filtered AIS DataFrame 
+            verbose=VERBOSE_MODE,                                    # verbose mode boolean
+            output_folder=parquet_folder_path                        # output folder path
+        )
+
         
 if __name__ == "__main__":
     main_data()
