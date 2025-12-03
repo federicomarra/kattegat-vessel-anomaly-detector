@@ -13,6 +13,7 @@ from shapely import contains_xy
 def read_single_ais_df(
     csv_path: Union[Path, str],
     bbox: Sequence[float],
+    columns_to_drop: Sequence[str] = (),
     verbose: bool = False,
 ) -> pd.DataFrame:
     """
@@ -20,6 +21,7 @@ def read_single_ais_df(
 
     Operations:
     - Spatial bbox filter in the SQL
+    - Drop unnecessary columns at the SQL level (columns_to_drop input)
     - Rename & parse Timestamp
     - Drop rows with invalid timestamps
     - Check required columns exist
@@ -31,23 +33,28 @@ def read_single_ais_df(
         Path to the AIS CSV file.
     bbox : Sequence[float]
         Bounding box as [lat_max, lon_min, lat_min, lon_max].
+    columns_to_drop : Sequence[str]
+        List of columns to remove directly in SQL via EXCLUDE.
     verbose : bool, optional
         If True, print basic info about the loaded data.
 
     Returns
     -------
     pd.DataFrame
-        AIS data within the given bounding box, with basic cleaning applied.
-
-    Examples
-    --------
-    >>> bbox = [57.58, 10.5, 57.12, 11.92]
-    >>> df_raw = read_ais_df("ais-data/aisdk-2025-11-05.csv", bbox, verbose=True)
+        Cleaned AIS data within the bounding box.
     """
+
     lat_max, lon_min, lat_min, lon_max = bbox
 
+    # Build EXCLUDE clause for DuckDB if columns are given
+    if columns_to_drop:
+        exclude_cols = ", ".join(f'"{c}"' for c in columns_to_drop)
+        select_clause = f"* EXCLUDE ({exclude_cols})"
+    else:
+        select_clause = "*"
+
     query = f"""
-    SELECT *
+    SELECT {select_clause}
     FROM read_csv_auto('{csv_path}', AUTO_DETECT=TRUE, ignore_errors=TRUE)
     WHERE Latitude <= {lat_max}
       AND Latitude >= {lat_min}
@@ -71,19 +78,18 @@ def read_single_ais_df(
     required_columns = ["Latitude", "Longitude", "Timestamp", "MMSI", "SOG"]
     missing = [col for col in required_columns if col not in df.columns]
     if missing:
-        raise KeyError(f" Required columns missing: {missing}")
+        raise KeyError(f"Required columns missing: {missing}")
 
-    # Ensure MMSI is string for later processing
+    # Ensure MMSI is string
     df["MMSI"] = df["MMSI"].astype(str)
 
     if verbose:
         print(
-            f" Read AIS data: {len(df):,} rows within bbox, "
-            f" {df['MMSI'].nunique():,} unique vessels"
+            f"Read AIS data: {len(df):,} rows within bbox, "
+            f"{df['MMSI'].nunique():,} unique vessels"
         )
 
     return df
-
 
 
 def read_raw_csv_with_filters(

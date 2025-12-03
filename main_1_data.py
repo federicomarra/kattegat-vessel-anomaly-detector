@@ -8,28 +8,30 @@ import src.data.ais_reader as ais_reader
 import src.data.ais_to_parquet as ais_to_parquet
 
 # Setup data
-START_DATE = config.START_DATE
-END_DATE   = config.END_DATE
 
 AIS_DATA_FOLDER = config.AIS_DATA_FOLDER
-DELETE_DOWNLOADED_CSV = config.DELETE_DOWNLOADED_CSV
-VERBOSE_MODE = config.VERBOSE_MODE
+VERBOSE_MODE = config.VERBOSE_MODE                          # Whether to print verbose output
 
-VESSEL_AIS_CLASS = config.VESSEL_AIS_CLASS
+START_DATE = config.START_DATE                              # Start date for data downloading
+END_DATE   = config.END_DATE                                # End date for data downloading
 
-REMOVE_ZERO_SOG_VESSELS = config.REMOVE_ZERO_SOG_VESSELS
-SOG_IN_MS = config.SOG_IN_MS
-SOG_MIN_KNOTS = config.SOG_MIN_KNOTS
-SOG_MAX_KNOTS = config.SOG_MAX_KNOTS
+AIS_DATA_NAME = config.AIS_DATA_FOLDER                      # Name of the folder to store AIS data
+DELETE_DOWNLOADED_CSV = config.DELETE_DOWNLOADED_CSV        # Whether to delete raw downloaded CSV files after processing
 
-# Bounding Box to prefilter AIS data [lat_max, lon_min, lat_min, lon_max]
-BBOX = config.BBOX
+VESSEL_AIS_CLASS = config.VESSEL_AIS_CLASS                  # AIS classes of vessels to include
 
-# Polygon coordinates for precise Area of Interest (AOI) filtering (lon, lat)
-POLYGON_COORDINATES = config.POLYGON_COORDINATES
+REMOVE_ZERO_SOG_VESSELS = config.REMOVE_ZERO_SOG_VESSELS    # Whether to remove vessels with zero Speed Over Ground
+SOG_IN_MS = config.SOG_IN_MS                                # If True, SOG is in meters/second; if False, SOG is in knots
+SOG_MIN_KNOTS = config.SOG_MIN_KNOTS                        # Minimum SOG in knots
+SOG_MAX_KNOTS = config.SOG_MAX_KNOTS                        # Maximum SOG in knots
+
+BBOX = config.BBOX                                          # Bounding Box to prefilter AIS data
+POLYGON_COORDINATES = config.POLYGON_COORDINATES            # Polygon coordinates for filter Area of Interest AOI in (lon,lat) 
+COLUMNS_TO_DROP = config.COLUMNS_TO_DROP                    # Columns to drop from AIS data
 
 # Import for data processing
 from tqdm import tqdm
+import gc
 from pathlib import Path
 import pandas as pd
 from datetime import date, timedelta
@@ -61,16 +63,18 @@ def main_data():
         csv_path = ais_downloader.download_one_ais_data(day, csv_folder_path)
         
         # --- Load CSV into DataFrame ---
-        df_raw = ais_reader.read_single_ais_df(csv_path, BBOX, verbose=VERBOSE_MODE)
+        df_raw = ais_reader.read_single_ais_df(csv_path, BBOX, columns_to_drop=COLUMNS_TO_DROP, verbose=VERBOSE_MODE)
         # --- Optionally delete the downloaded CSV file ---
         if DELETE_DOWNLOADED_CSV: csv_path.unlink(missing_ok=True)
         
         # --- Filter and split ---
         # Filter AIS data, keeping Class A and Class B by default,
         
+        # --- Filter and split ---
+        # Filter AIS data, keeping Class A and Class B by default,
         df_filtered = ais_filtering.filter_ais_df(
             df_raw,                                               # raw AIS DataFrame
-            polygon_coords=POLYGON_COORDINATES,                        # polygon coordinates for precise AOI filtering
+            polygon_coords=POLYGON_COORDINATES,                   # polygon coordinates for precise AOI filtering
             allowed_mobile_types=VESSEL_AIS_CLASS,                # vessel AIS class filter
             apply_polygon_filter=True,                            # keep polygon filtering enabled boolean
             remove_zero_sog_vessels=REMOVE_ZERO_SOG_VESSELS,      # use True/False to enable/disable 90% zero-SOG removal
@@ -82,6 +86,10 @@ def main_data():
             verbose=VERBOSE_MODE,                                 # verbose mode boolean
         )
         
+        # Free df_raw memory
+        del df_raw
+        gc.collect()
+
         # --- Parquet conversion ---
         # Save to Parquet by MMSI
         ais_to_parquet.save_by_mmsi(
@@ -89,6 +97,10 @@ def main_data():
             verbose=VERBOSE_MODE,                                    # verbose mode boolean
             output_folder=parquet_folder_path                        # output folder path
         )
+
+        # Free df_filtered memory
+        del df_filtered
+        gc.collect()
 
         
 if __name__ == "__main__":

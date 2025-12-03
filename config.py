@@ -50,6 +50,14 @@ BETA = 1e-3
 # STATIC CONFIGURATION VALUES BELOW
 # ---------------------------------------
 
+# ---- DATA COLUMNS CLEANING (NOT USED HERE)----
+COLUMNS_TO_DROP = [
+    'ROT', 'Heading', 'IMO', 'Callsign', 'Name',
+    'Navigational status', 'Cargo type', 'Width', 'Length',
+    'Type of position fixing device', 'Draught', 'Destination',
+    'ETA', 'Data source type', 'A', 'B', 'C', 'D'
+]
+
 #  ---- DATA FILTERING CONFIGURATION ----
 VESSEL_AIS_CLASS = ("Class A", "Class B")
 

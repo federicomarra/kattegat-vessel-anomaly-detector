@@ -23,10 +23,8 @@ MIN_TRACK_DURATION_SEC = config.MIN_TRACK_DURATION_SEC
 MIN_SEGMENT_LENGTH = config.MIN_SEGMENT_LENGTH
 
 MIN_FREQ_POINTS_PER_MIN = config.MIN_FREQ_POINTS_PER_MIN
-
-
 NUMERIC_COLS = config.NUMERIC_COLS
-# if u want to do it withouth a end date comment next line
+
 TRAIN_START_DATE = config.TRAIN_START_DATE
 TRAIN_END_DATE = config.TRAIN_END_DATE
 
@@ -34,6 +32,8 @@ TEST_START_DATE = config.TEST_START_DATE
 TEST_END_DATE = config.TEST_END_DATE
 
 RESAMPLING_RULE = config.RESAMPLING_RULE
+
+
 
 def main_pre_processing(dataframe_type: str = "all"):
 
@@ -45,22 +45,12 @@ def main_pre_processing(dataframe_type: str = "all"):
     elif dataframe_type == "train":
         print(f"[pre_processing] Querying AIS data for training period: {TRAIN_START_DATE} to {TRAIN_END_DATE}")
         # Loading filtered data from parquet files
-        dates = (
-            pd.date_range(TRAIN_START_DATE, TRAIN_END_DATE, freq="D")
-            .strftime("%Y-%m-%d")
-            .tolist()
-        )
-        df = ais_query.query_ais_duckdb(parquet_folder_path, dates=dates, verbose=VERBOSE_MODE)
+        df = ais_query.query_ais_duckdb(parquet_folder_path, date_start=TRAIN_START_DATE, date_end=TRAIN_END_DATE, verbose=VERBOSE_MODE)
         
     elif dataframe_type == "test":
         print(f"[pre_processing] Querying AIS data for testing period: {TEST_START_DATE} to {TEST_END_DATE}")
         # Loading filtered data from parquet files
-        dates = (
-            pd.date_range(TEST_START_DATE, TEST_END_DATE, freq="D")
-            .strftime("%Y-%m-%d")
-            .tolist()
-        )
-        df = ais_query.query_ais_duckdb(parquet_folder_path, dates=dates, verbose=VERBOSE_MODE)
+        df = ais_query.query_ais_duckdb(parquet_folder_path, date_start=TEST_START_DATE, date_end=TEST_END_DATE, verbose=VERBOSE_MODE)
     else:
         raise ValueError(f"Invalid dataframe_type: {dataframe_type}. Must be 'train' or 'test'.")
     
@@ -70,22 +60,7 @@ def main_pre_processing(dataframe_type: str = "all"):
     # Dropping unnecessary columns and rows with missing values
     df.drop(columns=[ 
         'Type of mobile', 
-        'ROT',
-        'COG',
-        'Heading', 
-        'IMO', 
-        'Callsign', 
-        'Name', 
-        'Navigational status',
-        'Cargo type', 
-        'Width', 
-        'Length',
-        'Type of position fixing device', 
-        'Draught', 
-        'Destination', 
-        'ETA',
-        'Data source type', 
-        'A', 'B', 'C', 'D', 
+        'COG', 
         'Date'], inplace=True, errors='ignore')
     
     # Removing rows with NaN values in essential columns
@@ -102,10 +77,12 @@ def main_pre_processing(dataframe_type: str = "all"):
     df.loc[df["Ship type"].isin(service_types), "Ship type"] = "Service"
     df.loc[~df["Ship type"].isin(valid_types), "Ship type"] = "Other"
     
+    print("[pre_processing] Ship type counts:")
+    print(df["Ship type"].value_counts())
+
     if VERBOSE_MODE:
         print(f"[pre_processing] DataFrame after dropping unnecessary columns and NaNs: {len(df):,} rows")
 
-    print("[pre_processing] Number of tracks before segmentation:", df["TrackID"].nunique())
     # Segmenting AIS tracks based on time gaps and max duration, filtering short segments
     df = ais_segment.segment_ais_tracks(
         df,
@@ -116,12 +93,8 @@ def main_pre_processing(dataframe_type: str = "all"):
         verbose=VERBOSE_MODE
     )
 
-    print("[pre_processing] Ship type counts:")
-    print(df["Ship type"].value_counts())
-
-    # Adding segment uid feature
+    # Adding segment nr feature
     df = pre_processing_utils.add_segment_nr(df)
-    print(f"[pre_processing] Number of segments after segmentation: {df['Segment_nr'].nunique():,}")
 
     # Removing segments with low point density
     df = pre_processing_utils.remove_notdense_segments(df, min_freq_points_per_min=MIN_FREQ_POINTS_PER_MIN)
