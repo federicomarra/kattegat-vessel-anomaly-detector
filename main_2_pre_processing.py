@@ -98,10 +98,11 @@ def main_pre_processing(dataframe_type: str = "all"):
 
     # Removing segments with low point density
     df = pre_processing_utils.remove_notdense_segments(df, min_freq_points_per_min=MIN_FREQ_POINTS_PER_MIN)
-    print(f"[pre_processing] Number of segments after removing low-density segments: {df['Segment_nr'].nunique():,}")
     
     # Resampling all tracks to fixed time intervals
     df = pre_processing_utils.resample_all_tracks(df, rule=RESAMPLING_RULE)
+
+    print(f"[pre_processing] Number of segments and rows after removing low-density segments and resampling: {df['Segment_nr'].nunique():,} segments, {len(df):,} rows")
 
     # Normalizing numeric columns
     df, mean, std = pre_processing_utils.normalize_df(df, NUMERIC_COLS)

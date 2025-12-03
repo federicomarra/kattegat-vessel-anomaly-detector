@@ -3,7 +3,7 @@
 AIS Autoencoder – Training & Evaluation Utilities
 ======================================================
 
-Struttura:
+Structure:
 
 - PART A: Dataset with meta + generic evaluation functions
 - PART B: PHASE 1 – Training on train/val + best model selection
