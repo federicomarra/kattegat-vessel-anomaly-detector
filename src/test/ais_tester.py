@@ -28,6 +28,9 @@ class AISTester:
         """
         # Store config
         self.config = model_config
+        self.loss_type = model_config.get('loss_type', 'mse') 
+        self.use_weighted_loss_metric = (self.loss_type == 'weighted_mse')
+        
         
         # Device setup
         if torch.cuda.is_available():
@@ -80,7 +83,17 @@ class AISTester:
         
         results = []
         mse_criterion = nn.MSELoss(reduction='none')
-        
+        use_weighted_loss = self.use_weighted_loss_metric
+
+        if use_weighted_loss:
+            # order [Lat, Lon, SOG, COG_sin, COG_cos]
+            feature_weights = torch.tensor(
+                [1.0, 1.0, 2.0, 2.0, 2.0], 
+                dtype=torch.float32, 
+                device=self.device 
+            ) 
+            weights_expanded = feature_weights.view(1, 1, -1)
+
         print("Running predictions...")
         with torch.no_grad():
             for batch in loader:
@@ -98,6 +111,11 @@ class AISTester:
                 # shape: (Batch, Seq, Features)
                 raw_errors = mse_criterion(reconstructed, padded_seqs)
                 
+                if use_weighted_loss:
+                    weighted_errors = raw_errors * weights_expanded
+                else:
+                    weighted_errors = raw_errors 
+                    
                 # Process batch to extract individual segment results
                 batch_size = padded_seqs.size(0)
                 
@@ -118,17 +136,20 @@ class AISTester:
                     # Extract valid data (remove padding)
                     original = padded_seqs[i, :length, :].cpu().numpy()
                     recon = reconstructed[i, :length, :].cpu().numpy()
-                    error_per_feat = raw_errors[i, :length, :].mean(dim=0).cpu().numpy() # Mean over time
-                    total_mse = raw_errors[i, :length, :].mean().item() # Scalar mean
+                    errors_for_seg = weighted_errors[i, :length, :]
+                    error_per_feat_mean = errors_for_seg.mean(dim=0).cpu().numpy()
+                    total_mse = errors_for_seg.mean().item()
                     
                     # Inverse Transform to get real units
+                    original = padded_seqs[i, :length, :].cpu().numpy()
+                    recon = reconstructed[i, :length, :].cpu().numpy()
                     original_real = self.dataset.scaler.inverse_transform(original)
                     recon_real = self.dataset.scaler.inverse_transform(recon)
                     
                     results.append({
                         'segment_id': seg_id,
                         'mse': total_mse,
-                        'mse_per_feature': error_per_feat,
+                        'mse_per_feature': error_per_feat_mean,
                         'original_real': original_real,
                         'recon_real': recon_real,
                         'length': length
