@@ -58,12 +58,12 @@ def segment_ais_tracks(
     df = df.copy()
 
     # ---------------- Basic checks ----------------
-    required_cols = ["MMSI", "Timestamp", "SOG"]
+    required_cols = ["MMSI", "Timestamp", "SOG", "TrackID"]
     missing = [c for c in required_cols if c not in df.columns]
     if missing:
         raise KeyError(f"segment_ais_tracks: required columns missing: {missing}")
 
-    df["MMSI"] = df["MMSI"].astype(str)
+    df["TrackID"] = df["TrackID"].astype(str)
 
     if not pd.api.types.is_datetime64_any_dtype(df["Timestamp"]):
         raise TypeError("segment_ais_tracks: 'Timestamp' must be a datetime dtype")
@@ -75,7 +75,7 @@ def segment_ais_tracks(
         )
 
     # ---------- 1) Sort ---------- 
-    df = df.sort_values(["MMSI", "Timestamp"])
+    df = df.sort_values(["TrackID", "Timestamp"])
 
     # ---------- 2) Compute Segment IDs (per MMSI) ---------- 
     def compute_segments(ts: pd.Series) -> pd.Series:
@@ -122,7 +122,7 @@ def segment_ais_tracks(
 
         return seg_ids
 
-    df["Segment"] = df.groupby("MMSI")["Timestamp"].transform(compute_segments)
+    df["Segment"] = df.groupby("TrackID")["Timestamp"].transform(compute_segments)
 
     # ---------- 3) Filter per (MMSI, Segment) ---------- 
     def segment_filter(g: pd.DataFrame) -> bool:
@@ -144,12 +144,12 @@ def segment_ais_tracks(
         return len_ok and time_ok
 
     if (min_track_len is not None) or (min_track_duration_sec is not None):
-        df = df.groupby(["MMSI", "Segment"], group_keys=False).filter(segment_filter)
+        df = df.groupby(["TrackID", "Segment"], group_keys=False).filter(segment_filter)
 
     df = df.reset_index(drop=True)
 
     if verbose:
-        n_segments = df[["MMSI", "Segment"]].drop_duplicates().shape[0]
+        n_segments = df[["TrackID", "Segment"]].drop_duplicates().shape[0]
         print(
             f"[segment_ais_tracks] After segment-level filter: {len(df):,} rows, "
             f"{n_segments:,} segments"
