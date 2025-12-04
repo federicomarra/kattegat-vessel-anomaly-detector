@@ -31,7 +31,7 @@ def main_test():
     # --- 1. CONFIGURATION ---
     
     # Name of the model configuration to use
-    MODEL_NAME = "H128_L16_Lay1_lr0.001_BS64_Drop0.0"  # Change as needed
+    MODEL_NAME = "H128_L16_Lay1_lr0.001_BS64_Drop0.0_mse"  # Change as needed
     
     N_BEST_WORST = config_file.N_BEST_WORST
     N_MAP_RANDOM = config_file.N_MAP_RANDOM
