@@ -21,6 +21,7 @@ def main_train_single():
     # Path to pre-processed training data
     PARQUET_FILE = config_file.PRE_PROCESSING_DF_TRAIN_PATH
     TRAIN_OUTPUT_DIR = config_file.TRAIN_OUTPUT_DIR
+    LOSS_TYPE = config_file.LOSS_TYPE
 
     # ensure output directory exists
     os.makedirs(TRAIN_OUTPUT_DIR, exist_ok=True)
@@ -44,11 +45,10 @@ def main_train_single():
         'dropout': config_file.DROP_OUT           # Regularization
     }
 
-    run_name_suffix = "_WEIGHTED_MSE"  # <--- if you change the loss UPDATE THE NAME here
     
     run_name = (f"H{top_params['hidden_dim']}_L{top_params['latent_dim']}_"
                 f"Lay{top_params['num_layers']}_lr{top_params['lr']}_"
-                f"BS{top_params['batch_size']}_Drop{top_params['dropout']}{run_name_suffix}")
+                f"BS{top_params['batch_size']}_Drop{top_params['dropout']}{run_name_suffix}_{LOSS_TYPE}")
 
     config = {
         "run_name": run_name,
@@ -57,6 +57,7 @@ def main_train_single():
         "features": FEATURES,
         "num_ship_types": NUM_SHIP_TYPES,
         "shiptype_emb_dim": 8,
+        "loss_type": LOSS_TYPE,
         
         # Dynamic Params (ora fissi)
         "hidden_dim": top_params['hidden_dim'],
