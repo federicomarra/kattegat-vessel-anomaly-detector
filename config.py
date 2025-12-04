@@ -10,9 +10,9 @@ VERBOSE_MODE = True
 START_DATE = "2025-08-01"  # Start date for data downloading
 END_DATE   = "2025-08-30"  # End date for data downloading
 
-AIS_DATA_FOLDER = "ais-data" # Root folder to store AIS data
 DELETE_DOWNLOADED_ZIP = True  # Whether to delete downloaded zip files after extraction
-DELETE_DOWNLOADED_CSV = False # Whether to delete downloaded CSV files after processing
+DELETE_DOWNLOADED_CSV = False # Whether to delete downloaded CSV files after parquet conversion
+
 
 # ---- PRE-PROCESSING CONFIGURATION ----
 TRAIN_START_DATE = "2025-08-01"
@@ -28,18 +28,29 @@ MIN_SEGMENT_LENGTH = None               # 10 # datapoints
 MIN_FREQ_POINTS_PER_MIN = 1          # Minimum frequency of points per minute in a segment
 RESAMPLING_RULE = "1min"  # Resampling rule for time series data
 
-SEGMENT_MAX_LENGTH = 300  # datapoints TODO: non sappiamo cos'è, jack lo sai??
+SEGMENT_MAX_LENGTH = 300  # datapoints TODO: do we still need this?
 
-# ---- TRAINING CONFIGURATION ---- # TODO: da sistemare
-BATCH_SIZE = 128
-EPOCHS = 30
+
+# ---- TRAINING CONFIGURATION ----
+SPLIT_TRAIN_VAL_RATIO = 0.8 # Ratio to split training and validation sets
+
+EPOCHS = 50
+PATIENCE = 7
+
+# TODO: these should be defined after experiments of the grid search
 HIDDEN_DIM = 64
 LATENT_DIM = 16
 NUM_LAYERS = 2
-SHIPTYPE_EMB_DIM = 8
 LEARNING_RATE = 1e-3
-BETA = 1e-3
+BATCH_SIZE = 128
+DROP_OUT = 0.0
+SHIPTYPE_EMB_DIM = 8
 
+
+# --- TESTING CONFIGURATION ----
+MODEL_NAME = "H128_L16_Lay1_lr0.001_BS64_Drop0.0"
+N_BEST_WORST = 3
+N_MAP_RANDOM = 5
 
 
 
@@ -49,6 +60,12 @@ BETA = 1e-3
 # ---------------------------------------
 # STATIC CONFIGURATION VALUES BELOW
 # ---------------------------------------
+AIS_DATA_FOLDER = "ais-data" # Root folder to store AIS data
+AIS_DATA_FOLDER_CSV_SUBFOLDER = "csv"
+AIS_DATA_FOLDER_PARQUET_SUBFOLDER = "parquet"
+FILE_PORT_LOCATIONS = "port_locodes.csv"
+
+PRE_PROCESSING_SUBFOLDER = "df_preprocessed"
 
 # ---- DATA COLUMNS CLEANING (NOT USED HERE)----
 COLUMNS_TO_DROP = [
@@ -94,11 +111,12 @@ CABLE_POINTS = {
     "Kattegat2B": cable_kattegat2B_points,
 }
 
-PRE_PROCESSING_DF_TRAIN_PATH = "ais-data/df_preprocessed/pre_processed_df_train.parquet"
-PRE_PROCESSING_DF_TEST_PATH = "ais-data/df_preprocessed/pre_processed_df_test.parquet"
-PRE_PROCESSING_METADATA_TRAIN_PATH = "ais-data/df_preprocessed/pre_processing_metadata_train.json"
-PRE_PROCESSING_METADATA_TEST_PATH = "ais-data/df_preprocessed/pre_processing_metadata_test.json"
-RAW_PARQUET_ROOT = "ais-data/parquet"
+PRE_PROCESSING_FOLDER = f"{AIS_DATA_FOLDER}/{PRE_PROCESSING_SUBFOLDER}"
+PRE_PROCESSING_DF_TRAIN_PATH = f"{PRE_PROCESSING_FOLDER}/pre_processed_df_train.parquet"
+PRE_PROCESSING_DF_TEST_PATH = f"{PRE_PROCESSING_FOLDER}/pre_processed_df_test.parquet"
+PRE_PROCESSING_METADATA_TRAIN_PATH = f"{PRE_PROCESSING_FOLDER}/pre_processing_metadata_train.json"
+PRE_PROCESSING_METADATA_TEST_PATH = f"{PRE_PROCESSING_FOLDER}/pre_processing_metadata_test.json"
+RAW_PARQUET_ROOT = f"{AIS_DATA_FOLDER}/{AIS_DATA_FOLDER_PARQUET_SUBFOLDER}"
 TEST_OUTPUT_CSV = f"runs/test_{TEST_START_DATE}_{TEST_END_DATE}_scores.csv"
 
 NUMERIC_COLS = [   # Columns to be normalized

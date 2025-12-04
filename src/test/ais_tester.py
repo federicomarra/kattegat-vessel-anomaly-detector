@@ -1,3 +1,10 @@
+# AIS Tester Class
+
+# File imports
+from src.train.ais_dataset import AISDataset, ais_collate_fn
+from src.train.model import AIS_LSTM_Autoencoder
+
+# Library imports
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -6,14 +13,7 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 import os
-import random
 import folium
-import json
-
-import config as config_file
-
-from src.train.ais_dataset import AISDataset, ais_collate_fn
-from src.train.model import AIS_LSTM_Autoencoder
 
 # Set style for plots
 sns.set_theme(style="whitegrid")
@@ -26,8 +26,21 @@ class AISTester:
             model_weights_path (str): Path to the .pth file
             output_dir (str): Directory where plots will be saved.
         """
+        # Store config
         self.config = model_config
-        self.device = device if device else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        
+        # Device setup
+        if torch.cuda.is_available():
+            actual_device = torch.device("cuda")  # for PC with NVIDIA
+        elif torch.backends.mps.is_available():
+            actual_device = torch.device("mps")   # for Mac Apple Silicon
+        else:
+            actual_device = torch.device("cpu")   # Fallback on CPU
+        
+        self.device = actual_device if device is None else device
+        print(f"Using device: {self.device}")
+        
+        # Output directory setup
         self.output_dir = output_dir
         
         # Create output directory if it doesn't exist
@@ -406,61 +419,3 @@ class AISTester:
         save_path = os.path.join(self.output_dir, filename)
         m.save(save_path)
         print(f"Map saved: {save_path}")
-
-
-    
-            
-       
-# ==========================================
-# Example Usage
-# ==========================================
-def testing_run():
-    
-    # Name of the model configuration to use
-    MODEL_NAME = "Config_Small"
-    
-    # Data to test on
-    PARQUET_FILE = config_file.PRE_PROCESSING_DF_TEST_PATH
-
-    # Output Directory
-    OUTPUT_DIR = config_file.TEST_OUTPUT_DIR + "/" + MODEL_NAME
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-
-    WEIGHTS_FILE = config_file.TRAIN_OUTPUT_DIR + "/weights_" + MODEL_NAME + ".pth"
-    CONFIG_FILE = config_file.TRAIN_OUTPUT_DIR + "/config_" + MODEL_NAME + ".json"
-    
-    # Load Model Config
-    with open(CONFIG_FILE, 'r') as f:
-        config = json.load(f)
-
-    tester = AISTester(config, WEIGHTS_FILE, output_dir=OUTPUT_DIR)
-    
-    if os.path.exists(PARQUET_FILE):
-        # 1. Evaluate ALL data first
-        tester.load_data(PARQUET_FILE)
-        tester.evaluate()
-        
-        # 2. Plot General Stats
-        tester.plot_error_distributions()
-        
-        # 3. Plot Filtered Stats (Example)
-        # You can pass a list of IDs to filter just the plot without re-running evaluate
-        # my_interesting_ids = ["segment_A", "segment_B"]
-        # tester.plot_error_distributions(filter_ids=my_interesting_ids, filename_suffix="_special_group")
-        
-        # 4. Standard Best/Worst
-        tester.plot_best_worst_segments(n=3)
-        
-        # 5. Maps
-        tester.generate_maps(n_best_worst=3, n_random=5)
-
-        # 6. Filtered Map Example
-        # tester.generate_filtered_map(segment_ids=["segment_1", "segment_2"], map_name="map_special_segments")
-        
-    else:
-        print(f"File {PARQUET_FILE} not found.")
-        
-        
-if __name__ == "__main__":
-    testing_run()

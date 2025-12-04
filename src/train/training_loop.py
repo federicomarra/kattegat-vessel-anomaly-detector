@@ -115,7 +115,7 @@ def run_experiment(config, model, train_loader, val_loader, device, save_path):
         history['train_loss'].append(train_loss)
         history['val_loss'].append(val_loss)
         
-        print(f"Epoch [{epoch+1}/{config['epochs']}] "
+        print(f"Epoch [{epoch+1:{len(str(config['epochs']))}}/{config['epochs']}] "
               f"Train Loss: {train_loss:.6f} | Val Loss: {val_loss:.6f}")
         
         early_stopping(val_loss, model)

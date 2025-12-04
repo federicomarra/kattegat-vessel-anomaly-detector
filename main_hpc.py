@@ -4,21 +4,16 @@
 # pip install -r requirements.txt
 
 # File imports
-import main_1_data as data
-import main_2_pre_processing as pre_proc
-#import main_3_training as train
-#import main_4_testing as test
-
-import training_run as train_run
-import testing_run as test_run
+from main_1_data import main_data as data
+from main_2_preprocess import main_preprocess as preprocess
+from main_3_train import main_train as train
+from main_4_test import main_test as test
 
 if __name__ == "__main__":
     # Decide which days to run in config.py
     
     # Run all steps sequentially
-    data.main_data()
-    pre_proc.main_pre_processing()
-    #train.main_training()
-    #test.main_testing()
-    train_run.training_run()
-    test_run.testing_run()
+    data()
+    preprocess()
+    train()
+    test()
