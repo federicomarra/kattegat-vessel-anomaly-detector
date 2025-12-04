@@ -414,7 +414,7 @@ class AISTester:
 # ==========================================
 # Example Usage
 # ==========================================
-if __name__ == "__main__":
+def training_run():
     
     # Name of the model configuration to use
     MODEL_NAME = "Config_Small"
@@ -460,3 +460,7 @@ if __name__ == "__main__":
         
     else:
         print(f"File {PARQUET_FILE} not found.")
+        
+        
+if __name__ == "__main__":
+    training_run()

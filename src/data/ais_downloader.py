@@ -141,7 +141,7 @@ def download_one_ais_data(day: date, dest_dir: Path, delete_downloaded_zip: bool
         print(f"Starting download and extraction for {tag}")
 
         # ---- Build the download URL based on the date ----
-        if day < SEP_DATE2:
+        if day <= SEP_DATE2:
             # daily with year folder: .../{YYYY}/aisdk-{YYYY-MM-DD}.zip
             url = f"{BASE_AIS_URL}/{day:%Y}/aisdk-{tag}.zip"
         else:
