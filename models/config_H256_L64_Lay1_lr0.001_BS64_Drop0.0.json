@@ -1,0 +1,20 @@
+{
+    "run_name": "H256_L64_Lay1_lr0.001_BS64_Drop0.0",
+    "epochs": 50,
+    "patience": 7,
+    "features": [
+        "Latitude",
+        "Longitude",
+        "SOG",
+        "COG_sin",
+        "COG_cos"
+    ],
+    "num_ship_types": 5,
+    "shiptype_emb_dim": 8,
+    "hidden_dim": 256,
+    "latent_dim": 64,
+    "num_layers": 1,
+    "lr": 0.001,
+    "batch_size": 64,
+    "dropout": 0.0
+}

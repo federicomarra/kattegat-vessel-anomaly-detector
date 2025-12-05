@@ -211,7 +211,6 @@ __marimo__/
 # AIS Data
 ais-data/csv
 ais-data/parquet
-ais-data/df_preprocessed/
 .DS_Store
 
 df_dynamic.parquet
@@ -224,10 +223,8 @@ map_*.html
 path_html/
 
 make_parquet.py
-*.parquet
 /runs
 eval/
-models/
 submit.sh
 test_results/
 
