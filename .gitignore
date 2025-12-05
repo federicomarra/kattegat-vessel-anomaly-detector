@@ -230,3 +230,4 @@ submit.sh
 
 /models
 /ais-data/df_preprocessed
+/test_results
